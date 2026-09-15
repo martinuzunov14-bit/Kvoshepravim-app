@@ -113,6 +113,50 @@ function Chip({ active, onClick, children, color }) {
     <button onClick={onClick} style={{ flex: "0 0 auto", padding: "8px 14px", borderRadius: 999, fontSize: 13.5, fontWeight: 600, border: `1px solid ${active ? (color || C.brand) : C.line}`, background: active ? hex2rgba(color || C.brand, 0.18) : "transparent", color: active ? (color || C.brand) : C.inkDim, cursor: "pointer" }}>{children}</button>
   );
 }
+function LogoMark({ size = 34 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" style={{ borderRadius: size * 0.28, flex: "0 0 auto", display: "block" }}>
+      <rect width="100" height="100" rx="26">
+        <animate attributeName="fill" values="#6fb3e6;#2a3a6b;#0a0a10;#2a3a6b;#6fb3e6" keyTimes="0;0.25;0.5;0.75;1" dur="8s" repeatCount="indefinite" />
+      </rect>
+      <circle cx="50" cy="34" r="14" fill="#ffcf4d">
+        <animate attributeName="opacity" values="1;0.3;0;0.3;1" keyTimes="0;0.25;0.5;0.75;1" dur="8s" repeatCount="indefinite" />
+      </circle>
+      <g>
+        <animate attributeName="opacity" values="0;0.3;1;0.3;0" keyTimes="0;0.25;0.5;0.75;1" dur="8s" repeatCount="indefinite" />
+        <circle cx="50" cy="34" r="11" fill="#f3f2f7" />
+        <circle cx="54" cy="30" r="9" fill="#0a0a10" />
+      </g>
+      <g>
+        <animate attributeName="opacity" values="0;0.2;1;0.2;0" keyTimes="0;0.25;0.5;0.75;1" dur="8s" repeatCount="indefinite" />
+        <polygon points="50,50 20,95 45,95" fill="#ff2f7e" opacity="0.3" />
+        <polygon points="50,50 80,95 55,95" fill="#7c4dff" opacity="0.28" />
+        <g transform="translate(50,50)">
+          <g>
+            <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="5s" repeatCount="indefinite" />
+            <circle r="7" fill="#c9c9d8" />
+          </g>
+        </g>
+        <circle cx="30" cy="70" r="1.6" fill="#ffcf4d"><animate attributeName="opacity" values="0.2;1;0.2" dur="0.9s" repeatCount="indefinite" /></circle>
+        <circle cx="70" cy="75" r="1.4" fill="#ff2f7e"><animate attributeName="opacity" values="1;0.2;1" dur="1.1s" repeatCount="indefinite" /></circle>
+      </g>
+    </svg>
+  );
+}
+function DiscoWordmark({ size = 15 }) {
+  return (
+    <span
+      style={{
+        fontFamily: "'Unbounded', sans-serif", fontWeight: 800, fontSize: size, letterSpacing: 3,
+        backgroundImage: `linear-gradient(90deg, ${C.brand}, ${C.brand2}, #3aa0ff, ${C.brand})`,
+        backgroundSize: "300% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
+        animation: "discoShift 4s linear infinite",
+      }}
+    >
+      VCHR
+    </span>
+  );
+}
 function IconBtn({ onClick, children, label }) {
   return (
     <button onClick={onClick} aria-label={label} style={{ width: 38, height: 38, borderRadius: 12, border: `1px solid ${C.line}`, background: C.surface2, color: C.ink, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, cursor: "pointer" }}>{children}</button>
@@ -407,11 +451,12 @@ export default function App() {
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255,255,255,.35);} 70% { box-shadow: 0 0 0 9px rgba(255,255,255,0);} 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0);} }
         button, a { font-family: inherit; }
         input { font-family: inherit; }
+        @keyframes discoShift { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
       `}</style>
 
       <div style={{ position: "sticky", top: 0, zIndex: 30, background: `linear-gradient(${C.bg}, ${C.bg}ee 80%, transparent)`, padding: "14px 16px 8px", display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{ width: 34, height: 34, borderRadius: 10, background: `linear-gradient(135deg, ${C.brand}, ${C.brand2})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flex: "0 0 auto" }}>🌙</div>
-        <div style={{ flex: 1, fontFamily: "'Unbounded', sans-serif", fontSize: 13.5, fontWeight: 700 }}>Тая вечер</div>
+        <LogoMark size={34} />
+        <div style={{ flex: 1, display: "flex", justifyContent: "center" }}><DiscoWordmark size={17} /></div>
         <IconBtn onClick={() => setSearchOpen(true)} label="Търсене">🔎</IconBtn>
         <IconBtn onClick={() => setNotifOpen(true)} label="Известия">🔔</IconBtn>
         <IconBtn onClick={() => setInfoOpen(true)} label="За данните">ℹ️</IconBtn>
