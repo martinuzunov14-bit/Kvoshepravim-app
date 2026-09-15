@@ -339,7 +339,18 @@ export default function App() {
       .then((gmaps) => {
         if (cancelled || !gmaps.places) return;
         const service = new gmaps.places.PlacesService(document.createElement("div"));
-        const targets = VENUES.filter((v) => v.lat != null && v.lon != null);
+        // Приоритет: първо заведенията, видими на началния екран (по едно от всеки жанр),
+        // после всички останали - за да не чакаш дълго точно тези снимки, които виждаш първи.
+        const withCoords = VENUES.filter((v) => v.lat != null && v.lon != null);
+        const priorityIds = new Set();
+        for (const g of GENRE_LIST) {
+          const v = withCoords.find((v) => v.type === "club" && v.genres[0] === g && !priorityIds.has(v.id));
+          if (v) priorityIds.add(v.id);
+        }
+        const targets = [
+          ...withCoords.filter((v) => priorityIds.has(v.id)),
+          ...withCoords.filter((v) => !priorityIds.has(v.id)),
+        ];
         let i = 0;
         const step = () => {
           if (cancelled || i >= targets.length) return;
@@ -355,7 +366,7 @@ export default function App() {
                 if (status === gmaps.places.PlacesServiceStatus.OK && results && results[0] && results[0].photos && results[0].photos[0]) {
                   try { v.img = results[0].photos[0].getUrl({ maxWidth: 640 }); } catch {}
                 }
-                if (i % 8 === 0 || i >= targets.length) setPhotoTick((t) => t + 1);
+                if (i <= priorityIds.size || i % 8 === 0 || i >= targets.length) setPhotoTick((t) => t + 1);
                 setTimeout(step, 180);
               }
             );
