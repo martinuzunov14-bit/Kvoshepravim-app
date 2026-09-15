@@ -267,29 +267,6 @@ export default function App() {
     return () => { cancelled = true; };
   }, []);
 
-  if (dataError) {
-    return (
-      <div style={{ minHeight: "100vh", background: C.bg, color: C.ink, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center", fontFamily: "Inter, sans-serif" }}>
-        <div>
-          <div style={{ fontSize: 32, marginBottom: 10 }}>⚠️</div>
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>Проблем при зареждане от базата</div>
-          <div style={{ color: C.inkDim, fontSize: 13 }}>{dataError}</div>
-        </div>
-      </div>
-    );
-  }
-  if (!dataLoaded) {
-    return (
-      <div style={{ minHeight: "100vh", background: C.bg, color: C.ink, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Inter, sans-serif" }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 32, marginBottom: 10 }}>🌙</div>
-          <div style={{ color: C.inkDim, fontSize: 13 }}>Зареждане на живи данни...</div>
-        </div>
-      </div>
-    );
-  }
-
-
   const [favVenues, setFavVenues] = useState(new Set());
   const [going, setGoing] = useState(new Set());
 
@@ -337,6 +314,30 @@ export default function App() {
     return true;
   });
   const eventsForVenue = (vid) => upcoming.filter((e) => e.venueId === vid);
+
+  // Guard-ите за грешка/зареждане идват ЧАК СЛЕД всички hooks по-горе —
+  // React изисква еднакъв брой hooks на всеки render, иначе гърми (грешка #310).
+  if (dataError) {
+    return (
+      <div style={{ minHeight: "100vh", background: C.bg, color: C.ink, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center", fontFamily: "Inter, sans-serif" }}>
+        <div>
+          <div style={{ fontSize: 32, marginBottom: 10 }}>⚠️</div>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>Проблем при зареждане от базата</div>
+          <div style={{ color: C.inkDim, fontSize: 13 }}>{dataError}</div>
+        </div>
+      </div>
+    );
+  }
+  if (!dataLoaded) {
+    return (
+      <div style={{ minHeight: "100vh", background: C.bg, color: C.ink, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Inter, sans-serif" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 32, marginBottom: 10 }}>🌙</div>
+          <div style={{ color: C.inkDim, fontSize: 13 }}>Зареждане на живи данни...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ fontFamily: "Inter, system-ui, sans-serif", background: C.bg, color: C.ink, minHeight: "100vh", maxWidth: 480, margin: "0 auto", position: "relative", paddingBottom: 84 }}>
