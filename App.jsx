@@ -81,8 +81,8 @@ function daysUntil(dateStr) {
   return Math.round((d - today) / 86400000);
 }
 function googleTickets(q) { return `https://www.google.com/search?q=${encodeURIComponent(q + " билети")}`; }
-function fbSearch(q) { return `https://www.facebook.com/search/top?q=${encodeURIComponent(q)}`; }
-function igSearch(q) { return `https://www.instagram.com/explore/search/keyword/?q=${encodeURIComponent(q)}`; }
+function fbSearch(q) { return `https://www.google.com/search?q=${encodeURIComponent(q + " facebook")}`; }
+function igSearch(q) { return `https://www.google.com/search?q=${encodeURIComponent(q + " instagram")}`; }
 
 /* ---------- REAL venues (verified via web search, Sept 2026) ---------- */
 // Широко разпространявани заглавия около септември 2026 в България (потвърдени чрез търсене:
@@ -245,6 +245,7 @@ export default function App() {
   const [profileName, setProfileName] = useState(null);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [dataError, setDataError] = useState(null);
+  const [photoTick, setPhotoTick] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -283,6 +284,46 @@ export default function App() {
     })();
     return () => { cancelled = true; };
   }, []);
+
+  // Фонова, прогресивна замяна на буквените placeholder-и с реални снимки от
+  // Google Places (ако Google има такива за конкретното място) - върви бавно
+  // на заден план, за да не удари rate limits; UI-ят се обновява периодично.
+  useEffect(() => {
+    if (!dataLoaded) return;
+    let cancelled = false;
+    loadGoogleMaps()
+      .then((gmaps) => {
+        if (cancelled || !gmaps.places) return;
+        const service = new gmaps.places.PlacesService(document.createElement("div"));
+        const targets = VENUES.filter((v) => v.lat != null && v.lon != null);
+        let i = 0;
+        const step = () => {
+          if (cancelled || i >= targets.length) return;
+          const v = targets[i++];
+          try {
+            service.findPlaceFromQuery(
+              {
+                query: `${v.name} ${v.address || ""} Sofia`,
+                fields: ["photos"],
+                locationBias: new gmaps.LatLng(v.lat, v.lon),
+              },
+              (results, status) => {
+                if (status === gmaps.places.PlacesServiceStatus.OK && results && results[0] && results[0].photos && results[0].photos[0]) {
+                  try { v.img = results[0].photos[0].getUrl({ maxWidth: 640 }); } catch {}
+                }
+                if (i % 8 === 0 || i >= targets.length) setPhotoTick((t) => t + 1);
+                setTimeout(step, 180);
+              }
+            );
+          } catch {
+            setTimeout(step, 180);
+          }
+        };
+        step();
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [dataLoaded]);
 
   const [favVenues, setFavVenues] = useState(new Set());
   const [going, setGoing] = useState(new Set());
@@ -417,18 +458,6 @@ export default function App() {
             <div onClick={() => setTab("map")} style={{ cursor: "pointer", borderRadius: 16, overflow: "hidden", border: `1px solid ${C.line}` }}><MiniMap venues={VENUES} /></div>
             <button onClick={() => setTab("map")} style={{ marginTop: 8, background: "none", border: "none", color: C.brand2, fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>Виж всички места →</button>
           </section>
-
-          <Rail title="🎉 Предстоящи фестивали" onSeeAll={() => { setTab("more"); setMoreMode("festivals"); }}>
-            {FESTIVALS.map((f) => (
-              <div key={f.id} onClick={() => setOpenFestival(f)} style={{ cursor: "pointer", flex: "0 0 220px", background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16, overflow: "hidden" }}>
-                <img src={img(f.id, 400, 220)} alt="" style={{ width: "100%", height: 110, objectFit: "cover" }} />
-                <div style={{ padding: 10 }}>
-                  <div style={{ fontWeight: 700, fontSize: 13 }}>{f.name}</div>
-                  <div style={{ fontSize: 11, color: C.inkDim, marginTop: 3 }}>📍 {f.place} · от {fmt(f.date)}</div>
-                </div>
-              </div>
-            ))}
-          </Rail>
 
           <Rail title="📍 Клубове, които да разгледаш" sub="по едно от всеки основен жанр" onSeeAll={() => { setTab("more"); setMoreMode("venues"); }}>
             {featuredVenues.map((v) => (
@@ -724,7 +753,7 @@ function loadGoogleMaps() {
   gmapsLoadPromise = new Promise((resolve, reject) => {
     if (!key) { reject(new Error("Липсва VITE_GOOGLE_MAPS_API_KEY")); return; }
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly&libraries=places`;
     script.async = true;
     script.onload = () => resolve(window.google.maps);
     script.onerror = () => reject(new Error("Google Maps не успя да се зареди"));
@@ -808,7 +837,7 @@ function RealMap({ venues, onPick, height = 380, interactive = true, initialZoom
     </div>
   );
 }
-function MiniMap({ venues }) { return <RealMap venues={venues} height={150} interactive={false} initialZoom={12} />; }
+function MiniMap({ venues }) { return <RealMap venues={venues} height={280} interactive={false} initialZoom={12} />; }
 function BigMap({ venues, onPick, height = 380 }) { return <RealMap venues={venues} onPick={onPick} height={height} interactive={!!onPick} initialZoom={13} showLabel={!!onPick} />; }
 
 function EventDetail({ ev, venue, going, onGoing, onOpenVenue }) {
