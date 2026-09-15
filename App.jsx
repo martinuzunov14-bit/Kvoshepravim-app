@@ -50,6 +50,23 @@ function hex2rgba(hex, a) {
   return `rgba(${r},${g},${b},${a})`;
 }
 function img(seed, w = 480, h = 320) { return `https://picsum.photos/seed/${encodeURIComponent(seed)}/${w}/${h}`; }
+// Честен placeholder вместо случайна стокова снимка, която няма нищо общо със заведението:
+// градиент в цвета на жанра + инициал на името. Няма реални снимки на заведенията (нямаме източник),
+// затова не се преструваме, че показваме истинска снимка.
+function placeholderImg(name, genreKey, w = 600, h = 360) {
+  const color = (GENRES[genreKey] && GENRES[genreKey].color) || "#ff2f7e";
+  const initial = (name || "?").trim().charAt(0).toUpperCase();
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="${color}" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#0a0a10" stop-opacity="1"/>
+    </linearGradient></defs>
+    <rect width="${w}" height="${h}" fill="#0a0a10"/>
+    <rect width="${w}" height="${h}" fill="url(#g)"/>
+    <text x="50%" y="54%" font-family="sans-serif" font-size="${Math.round(h * 0.32)}" font-weight="700" fill="#ffffff" fill-opacity="0.85" text-anchor="middle" dominant-baseline="middle">${initial}</text>
+  </svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
 function fmt(dateStr) {
   const d = new Date(dateStr + "T00:00:00");
   return `${d.getDate()} ${["яну","фев","мар","апр","май","юни","юли","авг","сеп","окт","ное","дек"][d.getMonth()]} ${d.getFullYear()}`;
@@ -247,13 +264,13 @@ export default function App() {
           address: v.address, website: v.website, instagram: v.instagram, facebook: v.facebook,
           note: v.note, rating: v.rating, ratingSource: v.rating_source, lat: v.lat, lon: v.lon,
           statusWarning: v.status_warning, nowShowing: v.now_showing,
-          img: v.img || img(v.id, 600, 360),
+          img: placeholderImg(v.name, (v.genres && v.genres[0]) || "mixed", 600, 360),
         }));
         EVENTS = (eRows || []).map((e) => ({
           id: e.id, title: e.title, artist: e.artist, venueId: e.venue_id, date: e.event_date,
           time: e.event_time, genre: e.genre, subGenre: e.sub_genre, ticketUrl: e.ticket_url,
           ticketLabel: e.ticket_label, social: e.social, instagram: e.social, desc: e.description,
-          img: e.img || img(e.id, 640, 420),
+          img: placeholderImg(e.title, e.genre || "mixed", 640, 420),
         }));
         FESTIVALS = (fRows || []).map((f) => ({
           id: f.id, name: f.name, place: f.place, date: f.event_date, days: f.days, genre: f.genre,
