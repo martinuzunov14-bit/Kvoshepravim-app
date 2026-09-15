@@ -261,7 +261,7 @@ export default function App() {
         if (cancelled) return;
         VENUES = (vRows || []).map((v) => ({
           id: v.id, name: v.name, district: v.district, type: v.type, genres: v.genres || ["mixed"],
-          address: v.address, website: v.website, instagram: v.instagram, facebook: v.facebook,
+          address: v.address, website: v.website, instagram: v.instagram, facebook: v.facebook, phone: v.phone,
           note: v.note, rating: v.rating, ratingSource: v.rating_source, lat: v.lat, lon: v.lon,
           statusWarning: v.status_warning, nowShowing: v.now_showing,
           img: placeholderImg(v.name, (v.genres && v.genres[0]) || "mixed", 600, 360),
@@ -844,6 +844,41 @@ function EventDetail({ ev, venue, going, onGoing, onOpenVenue }) {
   );
 }
 
+function ReportBug({ venueId, venueName }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [status, setStatus] = useState("idle"); // idle | sending | sent | error
+  const submit = async () => {
+    if (!text.trim()) return;
+    setStatus("sending");
+    const { error } = await supabase.from("reports").insert({ venue_id: venueId || null, venue_name: venueName || null, message: text.trim() });
+    setStatus(error ? "error" : "sent");
+  };
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} style={{ marginTop: 10, background: "none", border: `1px solid ${C.line}`, color: C.inkDim, borderRadius: 999, padding: "6px 12px", fontSize: 11.5, cursor: "pointer" }}>
+        🐞 Съобщи за грешка
+      </button>
+    );
+  }
+  if (status === "sent") {
+    return <div style={{ marginTop: 10, fontSize: 12, color: "#3ddc84" }}>✓ Благодарим! Ще го проверим.</div>;
+  }
+  return (
+    <div style={{ marginTop: 10, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 12, padding: 10 }}>
+      <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Какво не е наред? (грешен адрес, затворено място, стара информация...)"
+        style={{ width: "100%", minHeight: 60, background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 8, color: C.ink, fontSize: 12.5, padding: 8, boxSizing: "border-box", fontFamily: "inherit", resize: "vertical" }} />
+      {status === "error" && <div style={{ color: "#ff6b6b", fontSize: 11, marginTop: 4 }}>Нещо се обърка — опитай пак.</div>}
+      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+        <button onClick={submit} disabled={status === "sending" || !text.trim()} style={{ background: C.brand, border: "none", color: "#fff", borderRadius: 999, padding: "6px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: status === "sending" ? 0.6 : 1 }}>
+          {status === "sending" ? "Изпращане..." : "Изпрати"}
+        </button>
+        <button onClick={() => { setOpen(false); setText(""); }} style={{ background: "none", border: "none", color: C.inkFaint, fontSize: 12, cursor: "pointer" }}>Отказ</button>
+      </div>
+    </div>
+  );
+}
+
 function VenueDetail({ venue, events, fav, onFav, onOpenEvent }) {
   return (
     <div>
@@ -898,11 +933,13 @@ function VenueDetail({ venue, events, fav, onFav, onOpenEvent }) {
           </div>
         ))}
 
-        <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+        <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
+          {venue.phone && <LinkBtn href={`tel:${venue.phone.replace(/\s+/g, "")}`}>📞 {venue.phone}</LinkBtn>}
           <LinkBtn href={venue.website}>🌐 Уебсайт</LinkBtn>
           <LinkBtn href={venue.instagram}>📷 Instagram</LinkBtn>
           <LinkBtn href={venue.facebook}>📘 Facebook</LinkBtn>
         </div>
+        <ReportBug venueId={venue.id} venueName={venue.name} />
       </div>
     </div>
   );
