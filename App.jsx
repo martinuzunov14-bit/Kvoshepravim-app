@@ -289,7 +289,7 @@ export default function App() {
     if (!query.trim()) return null;
     const q = query.toLowerCase();
     return {
-      events: upcoming.filter((e) => e.title.toLowerCase().includes(q) || e.artist.toLowerCase().includes(q) || venueById[e.venueId].name.toLowerCase().includes(q)),
+      events: upcoming.filter((e) => (e.title || "").toLowerCase().includes(q) || (e.artist || "").toLowerCase().includes(q) || (venueById[e.venueId]?.name || "").toLowerCase().includes(q)),
       venues: VENUES.filter((v) => v.name.toLowerCase().includes(q) || v.district.toLowerCase().includes(q)),
       festivals: FESTIVALS.filter((f) => f.name.toLowerCase().includes(q)),
     };
@@ -909,7 +909,7 @@ function SmartFinder({ onClose, venueById, upcoming, onOpenEvent }) {
             <img src={venueById[e.venueId].img} alt="" style={{ width: 72, height: 72, objectFit: "cover" }} />
             <div style={{ padding: "8px 10px" }}>
               <div style={{ fontWeight: 700, fontSize: 13 }}>{e.title}</div>
-              <div style={{ fontSize: 11.5, color: C.inkDim }}>{venueById[e.venueId].name} · {fmt(e.date)}</div>
+              <div style={{ fontSize: 11.5, color: C.inkDim }}>{venueById[e.venueId]?.name || "—"} · {fmt(e.date)}</div>
             </div>
           </div>
         ))}
