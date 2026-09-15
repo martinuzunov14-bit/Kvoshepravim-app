@@ -649,7 +649,7 @@ export default function App() {
             <h2 style={{ fontFamily: "'Unbounded', sans-serif", fontSize: 17, color: C.ink, margin: "0 0 10px" }}>За данните в приложението</h2>
             <p>Заведенията и събитията са реални и събрани чрез търсене в интернет към 5 септември 2026 г. (eventim.bg, kupibileti.bg, allevents.in, Songkick, официални сайтове).</p>
             <p>Клубните DJ програми (Yalta, КУПЕ, CLWD и др.) се обявяват седмично в Instagram/Facebook на съответния клуб — приложението не претендира да ги изброи в реално време, затова има директен бутон към социалните им мрежи.</p>
-            <p>Картата вече показва реални улици на София (OpenStreetMap / CARTO), но координатите на част от местата не са GPS-потвърдени — те са приблизителни, в рамките на верния квартал.</p>
+            <p>Картата ползва Google Maps, но координатите на част от местата не са GPS-потвърдени — те са приблизителни, в рамките на верния квартал.</p>
             <p>Снимките са placeholder изображения, не реални снимки на местата или изпълнителите.</p>
             <p>Бутоните „Купи билет“ водят или към конкретната билетна платформа (когато е потвърдена), или към търсене на събитието, когато нямаме потвърден директен линк.</p>
             <p>Рейтингите (звезди), които виждаш при отваряне на заведение, са реални Google рейтинги, потвърдени чрез търсене — засега само за няколко от най-известните места (Yalta Club, Sofia Live Club, Хамбара). За останалите нямаме проверена цифра, затова не показваме рейтинг вместо да го измисляме.</p>
@@ -685,8 +685,7 @@ export default function App() {
   );
 }
 
-/* ---------- real map (actual OpenStreetMap / CARTO dark tiles, real lat/lon) ---------- */
-const TILE = 256;
+/* ---------- real map (Google Maps JavaScript API) ---------- */
 const SOFIA_CENTER = { lat: 42.6977, lon: 23.3219 };
 const DISTRICT_POINTS = [
   ["Център", 42.6977, 23.3219], ["Студентски град", 42.6534, 23.3550], ["Лозенец", 42.6739, 23.3129],
@@ -694,17 +693,6 @@ const DISTRICT_POINTS = [
   ["Красно село", 42.6890, 23.2934], ["Витоша (кв.)", 42.6423, 23.2760], ["Надежда", 42.7280, 23.2940],
   ["Изток", 42.6650, 23.3450], ["Иван Вазов", 42.6870, 23.3210], ["Оборище", 42.6970, 23.3400],
 ];
-function lonToTileX(lon, z) { return ((lon + 180) / 360) * Math.pow(2, z); }
-function latToTileY(lat, z) {
-  const rad = (lat * Math.PI) / 180;
-  return ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * Math.pow(2, z);
-}
-function tileXToLon(x, z) { return (x / Math.pow(2, z)) * 360 - 180; }
-function tileYToLat(y, z) {
-  const n = Math.pow(2, z);
-  const rad = Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n)));
-  return (rad * 180) / Math.PI;
-}
 function nearestDistrict(lat, lon) {
   let best = "София", bestD = Infinity;
   for (const [name, dlat, dlon] of DISTRICT_POINTS) {
@@ -713,81 +701,109 @@ function nearestDistrict(lat, lon) {
   }
   return best;
 }
-function Pin({ color, size = 26 }) {
-  return (
-    <svg width={size} height={size * 1.33} viewBox="0 0 24 32" style={{ display: "block" }}>
-      <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z" fill={color} stroke="#0a0a10" strokeWidth="1.5" />
-      <circle cx="12" cy="12" r="4.2" fill="#0a0a10" />
-    </svg>
-  );
-}
-function RealMap({ venues, onPick, height = 380, interactive = true, initialZoom = 14, showLabel = false }) {
-  const scrollRef = useRef(null);
-  const [zoom, setZoom] = useState(initialZoom);
-  const [label, setLabel] = useState("София");
-  const pts = venues.filter((v) => v.lat != null && v.lon != null);
-  const anchor = pts.length ? pts : [SOFIA_CENTER];
-  const xs = anchor.map((v) => lonToTileX(v.lon, zoom) * TILE);
-  const ys = anchor.map((v) => latToTileY(v.lat, zoom) * TILE);
-  const minTileX = Math.floor(Math.min(...xs) / TILE) - 1;
-  const maxTileX = Math.ceil(Math.max(...xs) / TILE) + 1;
-  const minTileY = Math.floor(Math.min(...ys) / TILE) - 1;
-  const maxTileY = Math.ceil(Math.max(...ys) / TILE) + 1;
-  const cols = maxTileX - minTileX;
-  const rows = maxTileY - minTileY;
-  const tiles = [];
-  for (let tx = minTileX; tx < maxTileX; tx++) for (let ty = minTileY; ty < maxTileY; ty++) tiles.push({ tx, ty });
-  const centroidPX = xs.reduce((a, b) => a + b, 0) / xs.length - minTileX * TILE;
-  const centroidPY = ys.reduce((a, b) => a + b, 0) / ys.length - minTileY * TILE;
 
-  const updateLabel = () => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const cx = (el.scrollLeft + el.clientWidth / 2 + minTileX * TILE) / TILE;
-    const cy = (el.scrollTop + el.clientHeight / 2 + minTileY * TILE) / TILE;
-    setLabel(nearestDistrict(tileYToLat(cy, zoom), tileXToLon(cx, zoom)));
-  };
+// Дарк стил близък до предишния вид на картата
+const DARK_MAP_STYLE = [
+  { elementType: "geometry", stylers: [{ color: "#151521" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#0a0a10" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#8b8fa3" }] },
+  { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#2a2a3d" }] },
+  { featureType: "poi", stylers: [{ visibility: "off" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#1f1f2e" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#6b6f80" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#2a2a3d" }] },
+  { featureType: "transit", stylers: [{ visibility: "off" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0d0d14" }] },
+];
+
+let gmapsLoadPromise = null;
+function loadGoogleMaps() {
+  if (window.google && window.google.maps) return Promise.resolve(window.google.maps);
+  if (gmapsLoadPromise) return gmapsLoadPromise;
+  const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  gmapsLoadPromise = new Promise((resolve, reject) => {
+    if (!key) { reject(new Error("Липсва VITE_GOOGLE_MAPS_API_KEY")); return; }
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly`;
+    script.async = true;
+    script.onload = () => resolve(window.google.maps);
+    script.onerror = () => reject(new Error("Google Maps не успя да се зареди"));
+    document.head.appendChild(script);
+  });
+  return gmapsLoadPromise;
+}
+
+function pinIcon(color, gmaps) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="34" viewBox="0 0 24 32">
+    <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z" fill="${color}" stroke="#0a0a10" stroke-width="1.5"/>
+    <circle cx="12" cy="12" r="4.2" fill="#0a0a10"/>
+  </svg>`;
+  return { url: `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`, scaledSize: new gmaps.Size(26, 34), anchor: new gmaps.Point(13, 34) };
+}
+
+function RealMap({ venues, onPick, height = 380, interactive = true, initialZoom = 14, showLabel = false }) {
+  const divRef = useRef(null);
+  const mapRef = useRef(null);
+  const markersRef = useRef([]);
+  const [label, setLabel] = useState("София");
+  const [status, setStatus] = useState("loading"); // loading | ready | error
+  const pts = venues.filter((v) => v.lat != null && v.lon != null);
 
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.scrollLeft = Math.max(0, centroidPX - el.clientWidth / 2);
-    el.scrollTop = Math.max(0, centroidPY - el.clientHeight / 2);
-    updateLabel();
-  }, [venues.length, zoom]);
+    let cancelled = false;
+    loadGoogleMaps()
+      .then((gmaps) => {
+        if (cancelled || !divRef.current) return;
+        const anchor = pts.length ? pts : [{ lat: SOFIA_CENTER.lat, lon: SOFIA_CENTER.lon }];
+        const center = { lat: anchor.reduce((a, v) => a + v.lat, 0) / anchor.length, lng: anchor.reduce((a, v) => a + v.lon, 0) / anchor.length };
+        const map = new gmaps.Map(divRef.current, {
+          center, zoom: initialZoom, styles: DARK_MAP_STYLE, disableDefaultUI: true,
+          gestureHandling: interactive ? "greedy" : "none", zoomControl: interactive, clickableIcons: false,
+        });
+        mapRef.current = map;
+        if (showLabel) {
+          map.addListener("idle", () => {
+            const c = map.getCenter();
+            if (c) setLabel(nearestDistrict(c.lat(), c.lng()));
+          });
+        }
+        setStatus("ready");
+      })
+      .catch(() => { if (!cancelled) setStatus("error"); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
+  useEffect(() => {
+    if (status !== "ready" || !mapRef.current || !window.google) return;
+    const gmaps = window.google.maps;
+    markersRef.current.forEach((m) => m.setMap(null));
+    markersRef.current = pts.map((v) => {
+      const marker = new gmaps.Marker({
+        position: { lat: v.lat, lng: v.lon }, map: mapRef.current, title: v.name,
+        icon: pinIcon(GENRES[v.genres[0]].color, gmaps), clickable: !!onPick, cursor: onPick ? "pointer" : "default",
+      });
+      if (onPick) marker.addListener("click", () => onPick(v));
+      return marker;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, venues.length]);
+
+  if (status === "error") {
+    return (
+      <div style={{ height, display: "flex", alignItems: "center", justifyContent: "center", background: "#0d0d14", color: C.inkDim, fontSize: 12.5, textAlign: "center", padding: 16 }}>
+        Картата не се зареди (провери VITE_GOOGLE_MAPS_API_KEY в Vercel).
+      </div>
+    );
+  }
   return (
     <div style={{ position: "relative" }}>
-      <div ref={scrollRef} onScroll={interactive && showLabel ? updateLabel : undefined}
-        style={{ position: "relative", height, overflow: interactive ? "auto" : "hidden", background: "#0d0d14", pointerEvents: interactive ? "auto" : "none" }}>
-        <div style={{ position: "relative", width: cols * TILE, height: rows * TILE }}>
-          {tiles.map(({ tx, ty }) => (
-            <img key={`${tx}_${ty}`} src={`https://a.basemaps.cartocdn.com/dark_all/${zoom}/${tx}/${ty}.png`} alt=""
-              style={{ position: "absolute", left: (tx - minTileX) * TILE, top: (ty - minTileY) * TILE, width: TILE, height: TILE, display: "block" }}
-              onError={(e) => { e.target.style.background = C.surface2; }} draggable={false} />
-          ))}
-          {pts.map((v) => {
-            const color = GENRES[v.genres[0]].color;
-            const px = lonToTileX(v.lon, zoom) * TILE - minTileX * TILE;
-            const py = latToTileY(v.lat, zoom) * TILE - minTileY * TILE;
-            return (
-              <button key={v.id} onClick={() => onPick && onPick(v)} title={v.name}
-                style={{ position: "absolute", left: px - 13, top: py - 32, background: "none", border: "none", padding: 0, cursor: interactive ? "pointer" : "default", filter: "drop-shadow(0 2px 4px rgba(0,0,0,.6))" }}>
-                <Pin color={color} />
-              </button>
-            );
-          })}
-        </div>
-        <div style={{ position: "absolute", left: 8, bottom: 4, fontSize: 9, color: "rgba(255,255,255,0.55)", background: "rgba(0,0,0,0.35)", padding: "1px 5px", borderRadius: 4 }}>© OpenStreetMap © CARTO</div>
-      </div>
-      {showLabel && (
-        <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(10,10,16,0.82)", border: `1px solid ${C.line}`, borderRadius: 999, padding: "6px 12px", fontSize: 12, fontWeight: 700, color: C.ink, pointerEvents: "none" }}>📍 {label}</div>
+      <div ref={divRef} style={{ height, background: "#0d0d14" }} />
+      {status === "loading" && (
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: C.inkDim, fontSize: 12.5 }}>Зареждане на картата...</div>
       )}
-      {interactive && (
-        <div style={{ position: "absolute", top: 10, right: 10, display: "flex", flexDirection: "column", gap: 4 }}>
-          <button onClick={() => setZoom((z) => Math.min(17, z + 1))} style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${C.line}`, background: "rgba(19,19,32,0.9)", color: C.ink, fontSize: 16, fontWeight: 700, cursor: "pointer" }}>+</button>
-          <button onClick={() => setZoom((z) => Math.max(11, z - 1))} style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${C.line}`, background: "rgba(19,19,32,0.9)", color: C.ink, fontSize: 16, fontWeight: 700, cursor: "pointer" }}>−</button>
-        </div>
+      {showLabel && status === "ready" && (
+        <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(10,10,16,0.82)", border: `1px solid ${C.line}`, borderRadius: 999, padding: "6px 12px", fontSize: 12, fontWeight: 700, color: C.ink, pointerEvents: "none" }}>📍 {label}</div>
       )}
     </div>
   );
