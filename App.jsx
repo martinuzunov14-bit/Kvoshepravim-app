@@ -78,8 +78,7 @@ function googleTickets(q) { return `https://www.google.com/search?q=${encodeURIC
 function fbSearch(q) { return `https://www.google.com/search?q=${encodeURIComponent(q + " facebook")}`; }
 function igSearch(q) { return `https://www.google.com/search?q=${encodeURIComponent(q + " instagram")}`; }
 
-// ---- Директни линкове към реалната програма на всяко кино (проверени, не search) ----
-// Ключовете са с малки букви за сравнение без значение на регистъра.
+// ---- Директни линкове към реалната програма (проверени, не search) ----
 const CINEMA_PROGRAM_LINKS = {
   "arena mladost": "https://www.kinoarena.com/bg/program",
   "arena the mall": "https://www.kinoarena.com/bg/program",
@@ -93,16 +92,29 @@ const CINEMA_PROGRAM_LINKS = {
   "одеон": "https://programata.bg/kino/kino-saloni/sofia/odeon-cinema/",
   "дом на киното": "https://domnakinoto.com/programing/index",
 };
+const THEATER_PROGRAM_LINKS = {
+  "театър софия": "https://sofiatheatre.eu/repertoar.php",
+  "театър \"сълза и смях\"": "https://www.salzaismyah.bg/site/calendar",
+  "театър „сълза и смях\"": "https://www.salzaismyah.bg/site/calendar",
+  "народен театър „иван вазов\"": "https://nationaltheatre.bg/bg/repertoar",
+  "народен театър \"иван вазов\"": "https://nationaltheatre.bg/bg/repertoar",
+  "софийска опера и балет": "https://www.operasofia.bg/repertoire",
+  "сатиричен театър „алеко константинов\"": "https://satirata.bg/repertoire",
+  "сатиричен театър \"алеко константинов\"": "https://satirata.bg/repertoire",
+  "театър на българската армия": "http://www.tba.art.bg/",
+};
 function cinemaProgramSearch(name) { return `https://www.google.com/search?q=${encodeURIComponent(name + " кино програма")}`; }
 function theaterRepertoireSearch(name) { return `https://www.google.com/search?q=${encodeURIComponent(name + " театър репертоар")}`; }
-function cinemaProgramUrl(name) {
+function lookupProgramUrl(name, map, fallbackFn) {
   const key = (name || "").trim().toLowerCase();
-  if (CINEMA_PROGRAM_LINKS[key]) return CINEMA_PROGRAM_LINKS[key];
-  for (const k in CINEMA_PROGRAM_LINKS) {
-    if (key.includes(k) || k.includes(key)) return CINEMA_PROGRAM_LINKS[k];
+  if (map[key]) return map[key];
+  for (const k in map) {
+    if (key.includes(k) || k.includes(key)) return map[k];
   }
-  return cinemaProgramSearch(name);
+  return fallbackFn(name);
 }
+function cinemaProgramUrl(name) { return lookupProgramUrl(name, CINEMA_PROGRAM_LINKS, cinemaProgramSearch); }
+function theaterProgramUrl(name) { return lookupProgramUrl(name, THEATER_PROGRAM_LINKS, theaterRepertoireSearch); }
 
 const NATIONAL_RELEASES = [
   { title: "28 години по-късно: Храм от кости", subGenre: "horror" },
@@ -789,7 +801,7 @@ export default function App() {
             <p>Рейтингите (звезди), които виждаш при отваряне на заведение, са реални Google рейтинги, потвърдени чрез търсене — засега само за няколко от най-известните места (Yalta Club, Sofia Live Club, Хамбара). За останалите нямаме проверена цифра, затова не показваме рейтинг вместо да го измисляме.</p>
             <p>Всяко заведение и събитие вече има отделни бутони за Instagram и Facebook. Там, където намерихме потвърдена официална страница (напр. Yalta Club, CLWD, Club 33, Plazza), линкваме директно към нея — иначе бутонът отваря търсене в съответната мрежа по име, вместо да измисляме несъществуващ адрес.</p>
             <p>Добавихме и секция „Театър“ — с два реални театъра (Народен театър „Иван Вазов" и Театър София) и реални представления от техните текущи програми.</p>
-            <p>За кина бутонът „Виж програмата“ води директно към официалния сайт на съответната верига/зала. За театри водим към търсене за актуалния репертоар, тъй като той се сменя по-рядко и точният адрес варира повече.</p>
+            <p>За по-големите кина и театри бутонът „Виж програмата/репертоара“ води директно към официалния им сайт. За по-малките зали водим към търсене, тъй като нямаме потвърден точен адрес за всяка.</p>
           </div>
         </Sheet>
       )}
@@ -1074,7 +1086,7 @@ function VenueDetail({ venue, events, fav, onFav, onOpenEvent }) {
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 13.5, fontWeight: 700, margin: "0 0 8px" }}>Актуален репертоар</div>
             <div style={{ color: C.inkFaint, fontSize: 12.5, marginBottom: 10 }}>Репертоарът се сменя често — виж актуалната програма директно на сайта на театъра.</div>
-            <LinkBtn href={theaterRepertoireSearch(venue.name)}>🎭 Виж репертоара →</LinkBtn>
+            <LinkBtn href={theaterProgramUrl(venue.name)}>🎭 Виж репертоара →</LinkBtn>
           </div>
         )}
 
