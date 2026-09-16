@@ -3,18 +3,6 @@ import { supabase } from "./supabaseClient.js";
 
 /* ============================================================================
    "КАКВО ЩЕ ПРАВИМ ТАЯ ВЕЧЕР?" — нощен пътеводител на София
-   ------------------------------------------------------------------------
-   ВАЖНО ЗА ДАННИТЕ (моля прочети):
-   - Заведенията и събитията по-долу са РЕАЛНИ, събрани чрез търсене в
-     интернет към 5 септември 2026 г. (eventim.bg, kupibileti.bg, allevents.in,
-     songkick, официални сайтове на клубове и медийни публикации).
-   - Клубните DJ програми се сменят ежеседмично и рядко се индексират онлайн —
-     затова за конкретните дати виж бутона "Социални мрежи" на съответния клуб.
-   - Точните адреси/координати на част от местата не са потвърдени на 100% —
-     позициите на картата са ориентировъчни, не GPS-точни.
-   - Снимките са placeholder изображения (не са реални снимки на местата).
-   - Бутоните "Купи билет" водят към билетната платформа или към търсене за
-     конкретното събитие, ако нямаме потвърден директен линк.
    ============================================================================ */
 
 /* ---------- design tokens ---------- */
@@ -50,9 +38,6 @@ function hex2rgba(hex, a) {
   return `rgba(${r},${g},${b},${a})`;
 }
 function img(seed, w = 480, h = 320) { return `https://picsum.photos/seed/${encodeURIComponent(seed)}/${w}/${h}`; }
-// Честен placeholder вместо случайна стокова снимка, която няма нищо общо със заведението:
-// градиент в цвета на жанра + инициал на името. Няма реални снимки на заведенията (нямаме източник),
-// затова не се преструваме, че показваме истинска снимка.
 function placeholderImg(name, genreKey, w = 600, h = 360) {
   const color = (GENRES[genreKey] && GENRES[genreKey].color) || "#ff2f7e";
   const initial = (name || "?").trim().charAt(0).toUpperCase();
@@ -84,22 +69,36 @@ function googleTickets(q) { return `https://www.google.com/search?q=${encodeURIC
 function fbSearch(q) { return `https://www.google.com/search?q=${encodeURIComponent(q + " facebook")}`; }
 function igSearch(q) { return `https://www.google.com/search?q=${encodeURIComponent(q + " instagram")}`; }
 
-/* ---------- REAL venues (verified via web search, Sept 2026) ---------- */
-// Широко разпространявани заглавия около септември 2026 в България (потвърдени чрез търсене:
-// cinefish.bg, forumfilm.bg, bTV Cinema X) — НЕ е потвърден график по конкретна зала/час,
-// затова е маркирано като "национален прокат", а не като точна програма на дадено кино.
 const NATIONAL_RELEASES = [
   { title: "28 години по-късно: Храм от кости", subGenre: "horror" },
   { title: "Анаконда", subGenre: "comedy" },
   { title: "Гарванът", subGenre: "action" },
 ];
 
-
-// Данните се зареждат на живо от Supabase (виж useEffect в App()) — тези масиви
-// започват празни и се попълват веднага след първото зареждане на страницата.
 let VENUES = [];
 let EVENTS = [];
 let FESTIVALS = [];
+
+/* ---------- venue name matching (for Google Places photo lookup) ---------- */
+const NAME_STOPWORDS = /\b(club|клуб|bar|бар|hall|зала|cinema|кино|theatre|theater|театър|arena|арена|the|sofia|софия)\b/g;
+function normalizeVenueName(s) {
+  return (s || "")
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/[„“"'.,–—-]/g, " ")
+    .replace(NAME_STOPWORDS, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+function namesLikelyMatch(ownRaw, foundRaw) {
+  const own = normalizeVenueName(ownRaw);
+  const found = normalizeVenueName(foundRaw);
+  if (!own || !found) return false;
+  if (own.includes(found) || found.includes(own)) return true;
+  const ownWords = own.split(" ").filter((w) => w.length >= 4);
+  const foundWords = new Set(found.split(" ").filter((w) => w.length >= 4));
+  return ownWords.some((w) => foundWords.has(w));
+}
 
 /* ---------- small UI pieces ---------- */
 function GenreBadge({ genre, size = "sm" }) {
@@ -224,14 +223,13 @@ function Rail({ title, sub, onSeeAll, children }) {
     </section>
   );
 }
-/* ---------- geo distance (real, from real lat/lon) ---------- */
 function haversineKm(lat1, lon1, lat2, lon2) {
   const R = 6371, dLat = ((lat2 - lat1) * Math.PI) / 180, dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 function NearbyScreen({ setOpenVenue }) {
-  const [status, setStatus] = useState("asking"); // asking | ok | denied
+  const [status, setStatus] = useState("asking");
   const [pos, setPos] = useState(null);
 
   useEffect(() => {
@@ -339,8 +337,6 @@ export default function App() {
       .then((gmaps) => {
         if (cancelled || !gmaps.places) return;
         const service = new gmaps.places.PlacesService(document.createElement("div"));
-        // Приоритет: първо заведенията, видими на началния екран (по едно от всеки жанр),
-        // после всички останали - за да не чакаш дълго точно тези снимки, които виждаш първи.
         const withCoords = VENUES.filter((v) => v.lat != null && v.lon != null);
         const priorityIds = new Set();
         for (const g of GENRE_LIST) {
@@ -356,21 +352,18 @@ export default function App() {
           if (cancelled || i >= targets.length) return;
           const v = targets[i++];
           try {
-                    service.findPlaceFromQuery(
-          {
-            query: `${v.name} ${v.address || ""} Sofia`,
-            fields: ["photos", "name"],
-            locationBias: new gmaps.LatLng(v.lat, v.lon),
-          },
-          (results, status) => {
-            if (status === gmaps.places.PlacesServiceStatus.OK && results && results[0] && results[0].photos && results[0].photos[0]) {
-              const foundName = (results[0].name || "").toLowerCase();
-              const ownName = (v.name || "").toLowerCase();
-              const namesMatch = foundName.includes(ownName) || ownName.includes(foundName);
-if (!namesMatch) alert("MISMATCH mine=[" + ownName + "] google=[" + foundName + "]");
-                try { v.img = results[0].photos[0].getUrl({ maxWidth: 640 }); } catch {}
-              }
-            }
+            service.findPlaceFromQuery(
+              {
+                query: `${v.name} ${v.address || ""} Sofia`,
+                fields: ["photos", "name"],
+                locationBias: new gmaps.LatLng(v.lat, v.lon),
+              },
+              (results, status) => {
+                if (status === gmaps.places.PlacesServiceStatus.OK && results && results[0] && results[0].photos && results[0].photos[0]) {
+                  if (namesLikelyMatch(v.name, results[0].name)) {
+                    try { v.img = results[0].photos[0].getUrl({ maxWidth: 640 }); } catch {}
+                  }
+                }
                 if (i <= priorityIds.size || i % 8 === 0 || i >= targets.length) setPhotoTick((t) => t + 1);
                 setTimeout(step, 180);
               }
@@ -390,7 +383,7 @@ if (!namesMatch) alert("MISMATCH mine=[" + ownName + "] google=[" + foundName + 
 
   const [mapGenre, setMapGenre] = useState("all");
   const [evGenre, setEvGenre] = useState("all");
-  const [evCategory, setEvCategory] = useState("music"); // music | theater | cinema
+  const [evCategory, setEvCategory] = useState("music");
   const [evSubGenre, setEvSubGenre] = useState("all");
   const [query, setQuery] = useState("");
 
@@ -433,8 +426,6 @@ if (!namesMatch) alert("MISMATCH mine=[" + ownName + "] google=[" + foundName + 
   });
   const eventsForVenue = (vid) => upcoming.filter((e) => e.venueId === vid);
 
-  // Guard-ите за грешка/зареждане идват ЧАК СЛЕД всички hooks по-горе —
-  // React изисква еднакъв брой hooks на всеки render, иначе гърми (грешка #310).
   if (dataError) {
     return (
       <div style={{ minHeight: "100vh", background: C.bg, color: C.ink, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center", fontFamily: "Inter, sans-serif" }}>
@@ -470,7 +461,7 @@ if (!namesMatch) alert("MISMATCH mine=[" + ownName + "] google=[" + foundName + 
         @keyframes discoShift { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
       `}</style>
 
-           <div style={{ position: "sticky", top: 0, zIndex: 30, background: `linear-gradient(${C.bg}, ${C.bg}ee 80%, transparent)`, padding: "14px 16px 8px", display: "grid", gridTemplateColumns: "auto 1fr auto", alignItems: "center", gap: 10 }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 30, background: `linear-gradient(${C.bg}, ${C.bg}ee 80%, transparent)`, padding: "14px 16px 8px", display: "grid", gridTemplateColumns: "auto 1fr auto", alignItems: "center", gap: 10 }}>
         <LogoMark size={48} />
         <div style={{ display: "flex", justifyContent: "center" }}><DiscoWordmark size={24} /></div>
         <div style={{ display: "flex", alignItems: "center", gap: 6, justifySelf: "end" }}>
@@ -482,7 +473,6 @@ if (!namesMatch) alert("MISMATCH mine=[" + ownName + "] google=[" + foundName + 
           </IconBtn>
         </div>
       </div>
-
 
       {tab === "home" && (
         <div>
@@ -795,7 +785,6 @@ function nearestDistrict(lat, lon) {
   return best;
 }
 
-// Дарк стил близък до предишния вид на картата
 const DARK_MAP_STYLE = [
   { elementType: "geometry", stylers: [{ color: "#151521" }] },
   { elementType: "labels.text.stroke", stylers: [{ color: "#0a0a10" }] },
@@ -839,7 +828,7 @@ function RealMap({ venues, onPick, height = 380, interactive = true, initialZoom
   const mapRef = useRef(null);
   const markersRef = useRef([]);
   const [label, setLabel] = useState("София");
-  const [status, setStatus] = useState("loading"); // loading | ready | error
+  const [status, setStatus] = useState("loading");
   const pts = venues.filter((v) => v.lat != null && v.lon != null);
 
   useEffect(() => {
@@ -850,17 +839,17 @@ function RealMap({ venues, onPick, height = 380, interactive = true, initialZoom
         const anchor = pts.length ? pts : [{ lat: SOFIA_CENTER.lat, lon: SOFIA_CENTER.lon }];
         const center = { lat: anchor.reduce((a, v) => a + v.lat, 0) / anchor.length, lng: anchor.reduce((a, v) => a + v.lon, 0) / anchor.length };
         const map = new gmaps.Map(divRef.current, {
-  center,
-  zoom: initialZoom,
-  styles: DARK_MAP_STYLE,
-  mapTypeControl: false,
-  streetViewControl: false,
-  fullscreenControl: false,
-  rotateControl: false,
-  zoomControl: interactive,
-  gestureHandling: interactive ? "greedy" : "none",
-  clickableIcons: false,
-});
+          center,
+          zoom: initialZoom,
+          styles: DARK_MAP_STYLE,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+          rotateControl: false,
+          zoomControl: interactive,
+          gestureHandling: interactive ? "greedy" : "none",
+          clickableIcons: false,
+        });
         mapRef.current = map;
         if (showLabel) {
           map.addListener("idle", () => {
@@ -948,7 +937,7 @@ function EventDetail({ ev, venue, going, onGoing, onOpenVenue }) {
 function ReportBug({ venueId, venueName }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
-  const [status, setStatus] = useState("idle"); // idle | sending | sent | error
+  const [status, setStatus] = useState("idle");
   const submit = async () => {
     if (!text.trim()) return;
     setStatus("sending");
