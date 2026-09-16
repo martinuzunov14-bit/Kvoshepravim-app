@@ -842,6 +842,17 @@ function RealMap({ venues, onPick, height = 380, interactive = true, initialZoom
         const anchor = pts.length ? pts : [{ lat: SOFIA_CENTER.lat, lon: SOFIA_CENTER.lon }];
         const center = { lat: anchor.reduce((a, v) => a + v.lat, 0) / anchor.length, lng: anchor.reduce((a, v) => a + v.lon, 0) / anchor.length };
         const map = new gmaps.Map(divRef.current, {
+  center,
+  zoom: initialZoom,
+  styles: DARK_MAP_STYLE,
+  mapTypeControl: false,
+  streetViewControl: false,
+  fullscreenControl: false,
+  rotateControl: false,
+  zoomControl: interactive,
+  gestureHandling: interactive ? "greedy" : "none",
+  clickableIcons: false,
+});
           center, zoom: initialZoom, styles: DARK_MAP_STYLE, disableDefaultUI: true,
           gestureHandling: interactive ? "greedy" : "none", zoomControl: interactive, clickableIcons: false,
         });
