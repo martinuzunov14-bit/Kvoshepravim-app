@@ -856,9 +856,6 @@ function RealMap({ venues, onPick, height = 380, interactive = true, initialZoom
   gestureHandling: interactive ? "greedy" : "none",
   clickableIcons: false,
 });
-          center, zoom: initialZoom, styles: DARK_MAP_STYLE, disableDefaultUI: true,
-          gestureHandling: interactive ? "greedy" : "none", zoomControl: interactive, clickableIcons: false,
-        });
         mapRef.current = map;
         if (showLabel) {
           map.addListener("idle", () => {
