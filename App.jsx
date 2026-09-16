@@ -102,6 +102,14 @@ const THEATER_PROGRAM_LINKS = {
   "сатиричен театър „алеко константинов\"": "https://satirata.bg/repertoire",
   "сатиричен театър \"алеко константинов\"": "https://satirata.bg/repertoire",
   "театър на българската армия": "http://www.tba.art.bg/",
+  "театър „възраждане\"": "https://theatrevazrajdane.bg/repertoar/",
+  "театър \"възраждане\"": "https://theatrevazrajdane.bg/repertoar/",
+  "театър 199": "https://theatre199.org/bg/schedule",
+  "младежки театър": "https://mlt.bg/",
+  "театър „зад канала\"": "https://zadkanala.bg/spektakli",
+  "театър \"зад канала\"": "https://zadkanala.bg/spektakli",
+  "днк": "https://ndk.bg/DNK",
+  "топлоцентрала": "https://toplocentrala.bg/",
 };
 function cinemaProgramSearch(name) { return `https://www.google.com/search?q=${encodeURIComponent(name + " кино програма")}`; }
 function theaterRepertoireSearch(name) { return `https://www.google.com/search?q=${encodeURIComponent(name + " театър репертоар")}`; }
