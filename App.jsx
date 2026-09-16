@@ -113,7 +113,7 @@ function Chip({ active, onClick, children, color }) {
     <button onClick={onClick} style={{ flex: "0 0 auto", padding: "8px 14px", borderRadius: 999, fontSize: 13.5, fontWeight: 600, border: `1px solid ${active ? (color || C.brand) : C.line}`, background: active ? hex2rgba(color || C.brand, 0.18) : "transparent", color: active ? (color || C.brand) : C.inkDim, cursor: "pointer" }}>{children}</button>
   );
 }
-function LogoMark({ size = 34 }) {
+function LogoMark({ size = 48 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" style={{ borderRadius: size * 0.28, flex: "0 0 auto", display: "block" }}>
       <rect width="100" height="100" rx="26">
