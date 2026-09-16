@@ -5,12 +5,21 @@ import { supabase } from "./supabaseClient.js";
    "КАКВО ЩЕ ПРАВИМ ТАЯ ВЕЧЕР?" — нощен пътеводител на София
    ============================================================================ */
 
-/* ---------- design tokens ---------- */
-const C = {
+/* ---------- design tokens (theme-aware, mutated in place on toggle) ---------- */
+const DARK_THEME = {
   bg: "#0a0a10", surface: "#131320", surface2: "#1c1c2e", line: "#2a2a3d",
   ink: "#f3f2f7", inkDim: "#9490ad", inkFaint: "#615d78",
   brand: "#ff2f7e", brand2: "#7c4dff",
 };
+const LIGHT_THEME = {
+  bg: "#f7f7fb", surface: "#ffffff", surface2: "#f0f0f5", line: "#e2e2ea",
+  ink: "#14141c", inkDim: "#5c5c6e", inkFaint: "#8a8a9a",
+  brand: "#ff2f7e", brand2: "#7c4dff",
+};
+let C = { ...DARK_THEME };
+function applyTheme(mode) {
+  Object.assign(C, mode === "light" ? LIGHT_THEME : DARK_THEME);
+}
 
 const GENRES = {
   chalga: { label: "Чалга / Балкан поп", color: "#ff4d4d" },
@@ -79,7 +88,7 @@ let VENUES = [];
 let EVENTS = [];
 let FESTIVALS = [];
 
-/* ---------- venue name matching (for Google Places photo lookup) ---------- */
+/* ---------- venue name matching (for Google Places photo/phone lookup) ---------- */
 const NAME_STOPWORDS = /\b(club|клуб|bar|бар|hall|зала|cinema|кино|theatre|theater|театър|arena|арена|the|sofia|софия)\b/g;
 function normalizeVenueName(s) {
   return (s || "")
@@ -274,6 +283,21 @@ function NearbyScreen({ setOpenVenue }) {
 
 /* ---------- app ---------- */
 export default function App() {
+  const [themeMode, setThemeMode] = useState(() => {
+    try {
+      const saved = typeof window !== "undefined" ? localStorage.getItem("vchr-theme") : null;
+      return saved === "light" || saved === "dark" ? saved : "dark";
+    } catch {
+      return "dark";
+    }
+  });
+  applyTheme(themeMode); // mutate the shared C object before this render's JSX reads it
+  const toggleTheme = () => {
+    const next = themeMode === "dark" ? "light" : "dark";
+    setThemeMode(next);
+    try { localStorage.setItem("vchr-theme", next); } catch {}
+  };
+
   const [tab, setTab] = useState("home");
   const [moreMode, setMoreMode] = useState("venues");
   const [openEvent, setOpenEvent] = useState(null);
@@ -465,6 +489,7 @@ export default function App() {
         <LogoMark size={48} />
         <div style={{ display: "flex", justifyContent: "center" }}><DiscoWordmark size={24} /></div>
         <div style={{ display: "flex", alignItems: "center", gap: 6, justifySelf: "end" }}>
+          <IconBtn onClick={toggleTheme} label="Тема">{themeMode === "dark" ? "☀️" : "🌙"}</IconBtn>
           <IconBtn onClick={() => setSearchOpen(true)} label="Търсене">🔎</IconBtn>
           <IconBtn onClick={() => setNotifOpen(true)} label="Известия">🔔</IconBtn>
           <IconBtn onClick={() => setInfoOpen(true)} label="За данните">ℹ️</IconBtn>
