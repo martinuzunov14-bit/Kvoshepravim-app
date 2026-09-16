@@ -367,7 +367,7 @@ export default function App() {
               const foundName = (results[0].name || "").toLowerCase();
               const ownName = (v.name || "").toLowerCase();
               const namesMatch = foundName.includes(ownName) || ownName.includes(foundName);
-if (!namesMatch && i <= 3) alert("MISMATCH mine=[" + ownName + "] google=[" + foundName + "]");
+if (!namesMatch) alert("MISMATCH mine=[" + ownName + "] google=[" + foundName + "]");
                 try { v.img = results[0].photos[0].getUrl({ maxWidth: 640 }); } catch {}
               }
             }
