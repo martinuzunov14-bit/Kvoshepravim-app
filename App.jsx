@@ -79,6 +79,17 @@ function fbSearch(q) { return `https://www.google.com/search?q=${encodeURICompon
 function igSearch(q) { return `https://www.google.com/search?q=${encodeURIComponent(q + " instagram")}`; }
 
 // ---- Директни линкове към реалната програма (проверени, не search) ----
+// simplifyName маха ВСИЧКИ видове кавички (право, „...", '...') и пунктуация,
+// без да маха думи като "театър"/"софия" - за да не се "изпразни" например
+// "Театър София" при опростяване.
+function simplifyName(s) {
+  return (s || "")
+    .toLowerCase()
+    .replace(/[„“”"'’‘()]/g, " ")
+    .replace(/[.,–—-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 const CINEMA_PROGRAM_LINKS = {
   "arena mladost": "https://www.kinoarena.com/bg/program",
   "arena the mall": "https://www.kinoarena.com/bg/program",
@@ -94,27 +105,23 @@ const CINEMA_PROGRAM_LINKS = {
 };
 const THEATER_PROGRAM_LINKS = {
   "театър софия": "https://sofiatheatre.eu/repertoar.php",
-  "театър \"сълза и смях\"": "https://www.salzaismyah.bg/site/calendar",
-  "театър „сълза и смях\"": "https://www.salzaismyah.bg/site/calendar",
-  "народен театър „иван вазов\"": "https://nationaltheatre.bg/bg/repertoar",
-  "народен театър \"иван вазов\"": "https://nationaltheatre.bg/bg/repertoar",
+  "сълза и смях": "https://www.salzaismyah.bg/site/calendar",
+  "иван вазов": "https://nationaltheatre.bg/bg/repertoar",
   "софийска опера и балет": "https://www.operasofia.bg/repertoire",
-  "сатиричен театър „алеко константинов\"": "https://satirata.bg/repertoire",
-  "сатиричен театър \"алеко константинов\"": "https://satirata.bg/repertoire",
-  "театър на българската армия": "http://www.tba.art.bg/",
-  "театър „възраждане\"": "https://theatrevazrajdane.bg/repertoar/",
-  "театър \"възраждане\"": "https://theatrevazrajdane.bg/repertoar/",
+  "алеко константинов": "https://satirata.bg/repertoire",
+  "българската армия": "http://www.tba.art.bg/",
+  "възраждане": "https://theatrevazrajdane.bg/repertoar/",
   "театър 199": "https://theatre199.org/bg/schedule",
   "младежки театър": "https://mlt.bg/",
-  "театър „зад канала\"": "https://zadkanala.bg/spektakli",
-  "театър \"зад канала\"": "https://zadkanala.bg/spektakli",
+  "зад канала": "https://zadkanala.bg/spektakli",
   "днк": "https://ndk.bg/DNK",
   "топлоцентрала": "https://toplocentrala.bg/",
 };
 function cinemaProgramSearch(name) { return `https://www.google.com/search?q=${encodeURIComponent(name + " кино програма")}`; }
 function theaterRepertoireSearch(name) { return `https://www.google.com/search?q=${encodeURIComponent(name + " театър репертоар")}`; }
 function lookupProgramUrl(name, map, fallbackFn) {
-  const key = (name || "").trim().toLowerCase();
+  const key = simplifyName(name);
+  if (!key) return fallbackFn(name);
   if (map[key]) return map[key];
   for (const k in map) {
     if (key.includes(k) || k.includes(key)) return map[k];
