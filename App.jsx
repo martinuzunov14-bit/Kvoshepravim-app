@@ -77,6 +77,10 @@ function daysUntil(dateStr) {
 function googleTickets(q) { return `https://www.google.com/search?q=${encodeURIComponent(q + " билети")}`; }
 function fbSearch(q) { return `https://www.google.com/search?q=${encodeURIComponent(q + " facebook")}`; }
 function igSearch(q) { return `https://www.google.com/search?q=${encodeURIComponent(q + " instagram")}`; }
+// Директно търсене на текущата програма, вместо гадаене на точен URL за всяко кино/театър —
+// намира правилната актуална страница (сайт на киното, programata.bg и т.н.), без риск от счупен линк.
+function cinemaProgramSearch(name) { return `https://www.google.com/search?q=${encodeURIComponent(name + " кино програма днес")}`; }
+function theaterRepertoireSearch(name) { return `https://www.google.com/search?q=${encodeURIComponent(name + " театър репертоар")}`; }
 
 const NATIONAL_RELEASES = [
   { title: "28 години по-късно: Храм от кости", subGenre: "horror" },
@@ -93,7 +97,7 @@ const NAME_STOPWORDS = /\b(club|клуб|bar|бар|hall|зала|cinema|кин�
 function normalizeVenueName(s) {
   return (s || "")
     .toLowerCase()
-    .replace(/\([^)]*\)/g, " ")
+    .replace(/[()]/g, " ")
     .replace(/[„“"'.,–—-]/g, " ")
     .replace(NAME_STOPWORDS, " ")
     .replace(/\s+/g, " ")
@@ -763,6 +767,7 @@ export default function App() {
             <p>Рейтингите (звезди), които виждаш при отваряне на заведение, са реални Google рейтинги, потвърдени чрез търсене — засега само за няколко от най-известните места (Yalta Club, Sofia Live Club, Хамбара). За останалите нямаме проверена цифра, затова не показваме рейтинг вместо да го измисляме.</p>
             <p>Всяко заведение и събитие вече има отделни бутони за Instagram и Facebook. Там, където намерихме потвърдена официална страница (напр. Yalta Club, CLWD, Club 33, Plazza), линкваме директно към нея — иначе бутонът отваря търсене в съответната мрежа по име, вместо да измисляме несъществуващ адрес.</p>
             <p>Добавихме и секция „Театър“ — с два реални театъра (Народен театър „Иван Вазов" и Театър София) и реални представления от техните текущи програми.</p>
+            <p>За кина и театри има бутон „Виж програмата/репертоара“, който отваря търсене за най-актуалната информация — не претендираме да показваме точните часове в самото приложение, защото се сменят твърде често.</p>
           </div>
         </Sheet>
       )}
@@ -1035,8 +1040,19 @@ function VenueDetail({ venue, events, fav, onFav, onOpenEvent }) {
                 <div style={{ fontSize: 10.5, color: C.inkFaint, marginTop: 4 }}>{venue.nowShowingNote || "Часовете на прожекциите се сменят ежедневно — виж точния час на сайта на киното."}</div>
               </div>
             ) : (
-              <div style={{ color: C.inkFaint, fontSize: 12.5 }}>Нямаме заредена днешна програма за тази зала — виж уебсайта за точните филми и часове.</div>
+              <div style={{ color: C.inkFaint, fontSize: 12.5, marginBottom: 10 }}>Нямаме заредена днешна програма за тази зала.</div>
             )}
+            <div style={{ marginTop: 10 }}>
+              <LinkBtn href={cinemaProgramSearch(venue.name)}>🎬 Виж програмата днес →</LinkBtn>
+            </div>
+          </div>
+        )}
+
+        {venue.type === "theater" && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 700, margin: "0 0 8px" }}>Актуален репертоар</div>
+            <div style={{ color: C.inkFaint, fontSize: 12.5, marginBottom: 10 }}>Репертоарът се сменя често — виж актуалната програма директно на сайта на театъра.</div>
+            <LinkBtn href={theaterRepertoireSearch(venue.name)}>🎭 Виж репертоара →</LinkBtn>
           </div>
         )}
 
