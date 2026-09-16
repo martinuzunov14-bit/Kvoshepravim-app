@@ -363,9 +363,11 @@ export default function App() {
                 locationBias: new gmaps.LatLng(v.lat, v.lon),
               },
               (results, status) => {
-                if (status === gmaps.places.PlacesServiceStatus.OK && results && results[0] && results[0].photos && results[0].photos[0]) {
-                  try { v.img = results[0].photos[0].getUrl({ maxWidth: 640 }); } catch {}
-                }
+  if (i === 1) alert("DEBUG status=" + status + " results=" + (results ? results.length : "null"));
+  if (status === gmaps.places.PlacesServiceStatus.OK && results && results[0] && results[0].photos && results[0].photos[0]) {
+    try { v.img = results[0].photos[0].getUrl({ maxWidth: 640 }); } catch {}
+  }
+
                 if (i <= priorityIds.size || i % 8 === 0 || i >= targets.length) setPhotoTick((t) => t + 1);
                 setTimeout(step, 180);
               }
