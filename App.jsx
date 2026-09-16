@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+limport React, { useState, useMemo, useEffect, useRef } from "react";
 import { supabase } from "./supabaseClient.js";
 
 /* ============================================================================
@@ -77,6 +77,21 @@ function daysUntil(dateStr) {
 function googleTickets(q) { return `https://www.google.com/search?q=${encodeURIComponent(q + " билети")}`; }
 function fbSearch(q) { return `https://www.google.com/search?q=${encodeURIComponent(q + " facebook")}`; }
 function igSearch(q) { return `https://www.google.com/search?q=${encodeURIComponent(q + " instagram")}`; }
+async function shareEvent(ev, venue) {
+  const text = `${ev.title}\n📍 ${venue?.name || ""}\n📅 ${weekday(ev.date)}, ${fmt(ev.date)} · 🕚 ${ev.time}\n\nВиж повече в „Какво ще правим тая вечер?"`;
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: ev.title, text });
+    } catch {} // потребителят е отказал/затворил - нормално, не показваме грешка
+  } else {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert("Копирано! Постави го, където искаш да го споделиш.");
+    } catch {
+      alert(text);
+    }
+  }
+}
 
 // ---- Директни линкове към реалната програма (проверени, не search) ----
 // simplifyName маха ВСИЧКИ видове кавички (право, „...", '...') и пунктуация,
@@ -1007,6 +1022,7 @@ function EventDetail({ ev, venue, going, onGoing, onOpenVenue }) {
           <LinkBtn href={ev.instagram}>📷 Instagram</LinkBtn>
           <LinkBtn href={ev.social}>📘 Facebook</LinkBtn>
         </div>
+        <button onClick={() => shareEvent(ev, venue)} style={{ width: "100%", padding: "11px 0", borderRadius: 12, border: `1px solid ${C.line}`, background: C.surface2, color: C.ink, fontWeight: 700, fontSize: 12.5, cursor: "pointer", marginBottom: 10 }}>📤 Сподели със приятели</button>
         <button onClick={onGoing} style={{ width: "100%", padding: "13px 0", borderRadius: 14, border: "none", cursor: "pointer", background: going ? C.surface2 : `linear-gradient(135deg, ${C.brand}, ${C.brand2})`, color: going ? C.brand : "#fff", fontWeight: 800, fontSize: 14.5 }}>{going ? "✓ Ще ходиш" : "ЩЕ ХОДЯ"}</button>
       </div>
     </div>
