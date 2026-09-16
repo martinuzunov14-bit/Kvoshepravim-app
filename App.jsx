@@ -47,6 +47,23 @@ function hex2rgba(hex, a) {
   return `rgba(${r},${g},${b},${a})`;
 }
 function img(seed, w = 480, h = 320) { return `https://picsum.photos/seed/${encodeURIComponent(seed)}/${w}/${h}`; }
+// Извлича домейна от website линка на заведението (works с/без https://, /path и т.н.)
+function extractDomain(url) {
+  if (!url) return null;
+  try {
+    const u = new URL(url.trim().startsWith("http") ? url.trim() : "https://" + url.trim());
+    return u.hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+// Взима логото на клуба директно от домейна му (Clearbit Logo API, безплатно, без ключ) -
+// вместо снимка от вътрешността на заведението.
+function clubLogoUrl(website) {
+  const domain = extractDomain(website);
+  if (!domain) return null;
+  return `https://logo.clearbit.com/${domain}?size=300`;
+}
 function placeholderImg(name, genreKey, w = 600, h = 360) {
   const color = (GENRES[genreKey] && GENRES[genreKey].color) || "#ff2f7e";
   const initial = (name || "?").trim().charAt(0).toUpperCase();
@@ -191,31 +208,43 @@ function Chip({ active, onClick, children, color }) {
 }
 function LogoMark({ size = 48 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" style={{ borderRadius: size * 0.28, flex: "0 0 auto", display: "block" }}>
-      <rect width="100" height="100" rx="26">
-        <animate attributeName="fill" values="#6fb3e6;#2a3a6b;#0a0a10;#2a3a6b;#6fb3e6" keyTimes="0;0.25;0.5;0.75;1" dur="8s" repeatCount="indefinite" />
-      </rect>
-      <circle cx="50" cy="34" r="14" fill="#ffcf4d">
-        <animate attributeName="opacity" values="1;0.3;0;0.3;1" keyTimes="0;0.25;0.5;0.75;1" dur="8s" repeatCount="indefinite" />
-      </circle>
-      <g>
-        <animate attributeName="opacity" values="0;0.3;1;0.3;0" keyTimes="0;0.25;0.5;0.75;1" dur="8s" repeatCount="indefinite" />
-        <circle cx="50" cy="34" r="11" fill="#f3f2f7" />
-        <circle cx="54" cy="30" r="9" fill="#0a0a10" />
+    <svg width={size} height={size} viewBox="0 0 100 100" style={{ flex: "0 0 auto", display: "block", overflow: "visible" }}>
+      <defs>
+        <radialGradient id="discoBallGrad" cx="35%" cy="28%" r="75%">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="35%" stopColor="#d6dcf0" />
+          <stop offset="70%" stopColor="#8b93ac" />
+          <stop offset="100%" stopColor="#3f4456" />
+        </radialGradient>
+        <pattern id="discoFacets" width="13" height="13" patternUnits="userSpaceOnUse">
+          <rect width="13" height="13" fill="none" stroke="#ffffff" strokeOpacity="0.4" strokeWidth="0.7" />
+        </pattern>
+        <clipPath id="discoBallClip">
+          <circle cx="50" cy="50" r="42" />
+        </clipPath>
+      </defs>
+
+      {/* цветни искри наоколо, сякаш топката отразява светлина */}
+      <circle cx="10" cy="28" r="2" fill="#ff2f7e"><animate attributeName="opacity" values="0.15;1;0.15" dur="1.1s" repeatCount="indefinite" /></circle>
+      <circle cx="90" cy="22" r="1.7" fill="#3aa0ff"><animate attributeName="opacity" values="1;0.2;1" dur="0.9s" repeatCount="indefinite" /></circle>
+      <circle cx="92" cy="70" r="1.9" fill="#7c4dff"><animate attributeName="opacity" values="0.25;1;0.25" dur="1.3s" repeatCount="indefinite" /></circle>
+      <circle cx="8" cy="74" r="1.6" fill="#ffcf4d"><animate attributeName="opacity" values="1;0.25;1" dur="1s" repeatCount="indefinite" /></circle>
+      <circle cx="50" cy="2" r="1.5" fill="#3ddc84"><animate attributeName="opacity" values="0.15;1;0.15" dur="1.4s" repeatCount="indefinite" /></circle>
+      <circle cx="50" cy="98" r="1.5" fill="#ff9a3d"><animate attributeName="opacity" values="1;0.2;1" dur="1.2s" repeatCount="indefinite" /></circle>
+
+      {/* самата диско топка */}
+      <circle cx="50" cy="50" r="42" fill="url(#discoBallGrad)" stroke="#2a2a3d" strokeWidth="1.5" />
+      <circle cx="50" cy="50" r="42" fill="url(#discoFacets)" opacity="0.55" />
+
+      {/* въртящ се блясък по повърхността */}
+      <g clipPath="url(#discoBallClip)">
+        <ellipse cx="50" cy="50" rx="55" ry="12" fill="#ffffff" opacity="0.3">
+          <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="5s" repeatCount="indefinite" />
+        </ellipse>
       </g>
-      <g>
-        <animate attributeName="opacity" values="0;0.2;1;0.2;0" keyTimes="0;0.25;0.5;0.75;1" dur="8s" repeatCount="indefinite" />
-        <polygon points="50,50 20,95 45,95" fill="#ff2f7e" opacity="0.3" />
-        <polygon points="50,50 80,95 55,95" fill="#7c4dff" opacity="0.28" />
-        <g transform="translate(50,50)">
-          <g>
-            <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="5s" repeatCount="indefinite" />
-            <circle r="7" fill="#c9c9d8" />
-          </g>
-        </g>
-        <circle cx="30" cy="70" r="1.6" fill="#ffcf4d"><animate attributeName="opacity" values="0.2;1;0.2" dur="0.9s" repeatCount="indefinite" /></circle>
-        <circle cx="70" cy="75" r="1.4" fill="#ff2f7e"><animate attributeName="opacity" values="1;0.2;1" dur="1.1s" repeatCount="indefinite" /></circle>
-      </g>
+
+      {/* окачваща жичка */}
+      <line x1="50" y1="2" x2="50" y2="9" stroke="#8b93ac" strokeWidth="1.4" />
     </svg>
   );
 }
@@ -394,18 +423,23 @@ export default function App() {
         if (eErr) throw eErr;
         if (fErr) throw fErr;
         if (cancelled) return;
-        VENUES = (vRows || []).map((v) => ({
-          id: v.id, name: v.name, district: v.district, type: v.type, genres: v.genres || ["mixed"],
-          address: v.address, website: v.website, instagram: v.instagram, facebook: v.facebook, phone: v.phone,
-          note: v.note, rating: v.rating, ratingSource: v.rating_source, lat: v.lat, lon: v.lon,
-          statusWarning: v.status_warning, nowShowing: v.now_showing,
-          img: placeholderImg(v.name, (v.genres && v.genres[0]) || "mixed", 600, 360),
-        }));
+        VENUES = (vRows || []).map((v) => {
+          const genre0 = (v.genres && v.genres[0]) || "mixed";
+          const logo = v.type === "club" ? clubLogoUrl(v.website) : null;
+          return {
+            id: v.id, name: v.name, district: v.district, type: v.type, genres: v.genres || ["mixed"],
+            address: v.address, website: v.website, instagram: v.instagram, facebook: v.facebook, phone: v.phone,
+            note: v.note, rating: v.rating, ratingSource: v.rating_source, lat: v.lat, lon: v.lon,
+            statusWarning: v.status_warning, nowShowing: v.now_showing,
+            img: logo || placeholderImg(v.name, genre0, 600, 360),
+            isLogo: !!logo,
+          };
+        });
         EVENTS = (eRows || []).map((e) => ({
           id: e.id, title: e.title, artist: e.artist, venueId: e.venue_id, date: e.event_date,
           time: e.event_time, genre: e.genre, subGenre: e.sub_genre, ticketUrl: e.ticket_url,
           ticketLabel: e.ticket_label, social: e.social, instagram: e.social, desc: e.description,
-          img: placeholderImg(e.title, e.genre || "mixed", 640, 420),
+          img: e.image_url || placeholderImg(e.title, e.genre || "mixed", 640, 420),
         }));
         FESTIVALS = (fRows || []).map((f) => ({
           id: f.id, name: f.name, place: f.place, date: f.event_date, days: f.days, genre: f.genre,
@@ -429,7 +463,7 @@ export default function App() {
       .then((gmaps) => {
         if (cancelled || !gmaps.places) return;
         const service = new gmaps.places.PlacesService(document.createElement("div"));
-        const withCoords = VENUES.filter((v) => v.lat != null && v.lon != null);
+        const withCoords = VENUES.filter((v) => v.lat != null && v.lon != null && v.type !== "club");
         const priorityIds = new Set();
         for (const g of GENRE_LIST) {
           const v = withCoords.find((v) => v.type === "club" && v.genres[0] === g && !priorityIds.has(v.id));
@@ -475,6 +509,7 @@ export default function App() {
 
   const [mapGenre, setMapGenre] = useState("all");
   const [evGenre, setEvGenre] = useState("all");
+  const [selectedDate, setSelectedDate] = useState("");
   const [evCategory, setEvCategory] = useState("music");
   const [evSubGenre, setEvSubGenre] = useState("all");
   const [query, setQuery] = useState("");
@@ -509,6 +544,7 @@ export default function App() {
     return picks;
   }, [dataLoaded]);
   const filteredEvents = upcoming.filter((e) => {
+    if (selectedDate && e.date !== selectedDate) return false;
     if (evCategory === "theater" && e.genre !== "theater") return false;
     if (evCategory === "cinema" && e.genre !== "cinema") return false;
     if (evCategory === "music" && (e.genre === "theater" || e.genre === "cinema")) return false;
@@ -647,6 +683,17 @@ export default function App() {
         <div>
           <div style={{ padding: "4px 16px 8px" }}>
             <h1 style={{ fontFamily: "'Unbounded', sans-serif", fontSize: 20, margin: "4px 0 12px" }}>Предстоящи събития</h1>
+            <div style={{ display: "flex", gap: 8, marginBottom: 10, alignItems: "center" }}>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                style={{ flex: 1, padding: "9px 10px", borderRadius: 12, border: `1px solid ${selectedDate ? C.brand : C.line}`, background: C.surface, color: C.ink, fontSize: 12.5, colorScheme: "dark" }}
+              />
+              {selectedDate && (
+                <button onClick={() => setSelectedDate("")} style={{ background: "none", border: `1px solid ${C.line}`, borderRadius: 10, padding: "9px 12px", color: C.inkDim, fontSize: 12, cursor: "pointer" }}>✕</button>
+              )}
+            </div>
             <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
               {[["music", "🎵 Музика"], ["theater", "🎭 Театър"], ["cinema", "🎬 Кино"]].map(([k, l]) => (
                 <button key={k} onClick={() => { setEvCategory(k); setEvGenre("all"); setEvSubGenre("all"); }} style={{
@@ -909,12 +956,19 @@ function loadGoogleMaps() {
   return gmapsLoadPromise;
 }
 
-function pinIcon(color, gmaps) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="34" viewBox="0 0 24 32">
-    <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z" fill="${color}" stroke="#0a0a10" stroke-width="1.5"/>
-    <circle cx="12" cy="12" r="4.2" fill="#0a0a10"/>
+function venuePinIcon(venue, gmaps) {
+  const color = (GENRES[venue.genres[0]] && GENRES[venue.genres[0]].color) || "#ff2f7e";
+  const photo = venue.img || "";
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="46" height="58" viewBox="0 0 46 58">
+    <defs>
+      <clipPath id="pinClip-${venue.id}"><circle cx="23" cy="21" r="16"/></clipPath>
+    </defs>
+    <path d="M23 0C10.3 0 0 10.3 0 23c0 17 23 35 23 35s23-18 23-35C46 10.3 35.7 0 23 0z" fill="${color}" stroke="#0a0a10" stroke-width="2"/>
+    <circle cx="23" cy="21" r="18" fill="#ffffff"/>
+    <image href="${photo}" x="5" y="3" width="36" height="36" clip-path="url(#pinClip-${venue.id})" preserveAspectRatio="xMidYMid slice"/>
+    <circle cx="23" cy="21" r="16" fill="none" stroke="#0a0a10" stroke-width="1.3"/>
   </svg>`;
-  return { url: `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`, scaledSize: new gmaps.Size(26, 34), anchor: new gmaps.Point(13, 34) };
+  return { url: `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`, scaledSize: new gmaps.Size(46, 58), anchor: new gmaps.Point(23, 58) };
 }
 
 function RealMap({ venues, onPick, height = 380, interactive = true, initialZoom = 14, showLabel = false }) {
@@ -965,7 +1019,7 @@ function RealMap({ venues, onPick, height = 380, interactive = true, initialZoom
     markersRef.current = pts.map((v) => {
       const marker = new gmaps.Marker({
         position: { lat: v.lat, lng: v.lon }, map: mapRef.current, title: v.name,
-        icon: pinIcon(GENRES[v.genres[0]].color, gmaps), clickable: !!onPick, cursor: onPick ? "pointer" : "default",
+        icon: venuePinIcon(v, gmaps), clickable: !!onPick, cursor: onPick ? "pointer" : "default",
       });
       if (onPick) marker.addListener("click", () => onPick(v));
       return marker;
