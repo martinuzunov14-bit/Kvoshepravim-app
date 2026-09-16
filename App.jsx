@@ -77,10 +77,32 @@ function daysUntil(dateStr) {
 function googleTickets(q) { return `https://www.google.com/search?q=${encodeURIComponent(q + " билети")}`; }
 function fbSearch(q) { return `https://www.google.com/search?q=${encodeURIComponent(q + " facebook")}`; }
 function igSearch(q) { return `https://www.google.com/search?q=${encodeURIComponent(q + " instagram")}`; }
-// Директно търсене на текущата програма, вместо гадаене на точен URL за всяко кино/театър —
-// намира правилната актуална страница (сайт на киното, programata.bg и т.н.), без риск от счупен линк.
-function cinemaProgramSearch(name) { return `https://www.google.com/search?q=${encodeURIComponent(name + " кино програма днес")}`; }
+
+// ---- Директни линкове към реалната програма на всяко кино (проверени, не search) ----
+// Ключовете са с малки букви за сравнение без значение на регистъра.
+const CINEMA_PROGRAM_LINKS = {
+  "arena mladost": "https://www.kinoarena.com/bg/program",
+  "arena the mall": "https://www.kinoarena.com/bg/program",
+  "arena west": "https://www.kinoarena.com/bg/program",
+  "cinema city mall of sofia": "https://www.cinemacity.bg/cinemas/mallofsofia/1261",
+  "cinema city paradise center": "https://www.cinemacity.bg/cinemas/paradisecenter/1266",
+  "cine grand city center sofia": "https://cinegrand.bg/site/default/select-cinema",
+  "cine grand sofia ring mall": "https://cinegrand.bg/site/default/select-cinema",
+  "g8 cinema": "https://g8cinema.com/programa2/",
+  "euro cinema": "https://g8cinema.com/programa2/",
+  "одеон": "https://programata.bg/kino/kino-saloni/sofia/odeon-cinema/",
+  "дом на киното": "https://domnakinoto.com/programing/index",
+};
+function cinemaProgramSearch(name) { return `https://www.google.com/search?q=${encodeURIComponent(name + " кино програма")}`; }
 function theaterRepertoireSearch(name) { return `https://www.google.com/search?q=${encodeURIComponent(name + " театър репертоар")}`; }
+function cinemaProgramUrl(name) {
+  const key = (name || "").trim().toLowerCase();
+  if (CINEMA_PROGRAM_LINKS[key]) return CINEMA_PROGRAM_LINKS[key];
+  for (const k in CINEMA_PROGRAM_LINKS) {
+    if (key.includes(k) || k.includes(key)) return CINEMA_PROGRAM_LINKS[k];
+  }
+  return cinemaProgramSearch(name);
+}
 
 const NATIONAL_RELEASES = [
   { title: "28 години по-късно: Храм от кости", subGenre: "horror" },
@@ -767,7 +789,7 @@ export default function App() {
             <p>Рейтингите (звезди), които виждаш при отваряне на заведение, са реални Google рейтинги, потвърдени чрез търсене — засега само за няколко от най-известните места (Yalta Club, Sofia Live Club, Хамбара). За останалите нямаме проверена цифра, затова не показваме рейтинг вместо да го измисляме.</p>
             <p>Всяко заведение и събитие вече има отделни бутони за Instagram и Facebook. Там, където намерихме потвърдена официална страница (напр. Yalta Club, CLWD, Club 33, Plazza), линкваме директно към нея — иначе бутонът отваря търсене в съответната мрежа по име, вместо да измисляме несъществуващ адрес.</p>
             <p>Добавихме и секция „Театър“ — с два реални театъра (Народен театър „Иван Вазов" и Театър София) и реални представления от техните текущи програми.</p>
-            <p>За кина и театри има бутон „Виж програмата/репертоара“, който отваря търсене за най-актуалната информация — не претендираме да показваме точните часове в самото приложение, защото се сменят твърде често.</p>
+            <p>За кина бутонът „Виж програмата“ води директно към официалния сайт на съответната верига/зала. За театри водим към търсене за актуалния репертоар, тъй като той се сменя по-рядко и точният адрес варира повече.</p>
           </div>
         </Sheet>
       )}
@@ -1043,7 +1065,7 @@ function VenueDetail({ venue, events, fav, onFav, onOpenEvent }) {
               <div style={{ color: C.inkFaint, fontSize: 12.5, marginBottom: 10 }}>Нямаме заредена днешна програма за тази зала.</div>
             )}
             <div style={{ marginTop: 10 }}>
-              <LinkBtn href={cinemaProgramSearch(venue.name)}>🎬 Виж програмата днес →</LinkBtn>
+              <LinkBtn href={cinemaProgramUrl(venue.name)}>🎬 Виж програмата →</LinkBtn>
             </div>
           </div>
         )}
