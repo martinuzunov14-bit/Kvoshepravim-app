@@ -465,16 +465,19 @@ export default function App() {
         @keyframes discoShift { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
       `}</style>
 
-      <div style={{ position: "sticky", top: 0, zIndex: 30, background: `linear-gradient(${C.bg}, ${C.bg}ee 80%, transparent)`, padding: "14px 16px 8px", display: "flex", alignItems: "center", gap: 10 }}>
-        <LogoMark size={34} />
-        <div style={{ flex: 1, display: "flex", justifyContent: "center" }}><DiscoWordmark size={17} /></div>
-        <IconBtn onClick={() => setSearchOpen(true)} label="Търсене">🔎</IconBtn>
-        <IconBtn onClick={() => setNotifOpen(true)} label="Известия">🔔</IconBtn>
-        <IconBtn onClick={() => setInfoOpen(true)} label="За данните">ℹ️</IconBtn>
-        <IconBtn onClick={() => (profileName ? setTab("profile") : setLoginOpen(true))} label="Профил">
-          {profileName ? profileName[0].toUpperCase() : "👤"}
-        </IconBtn>
+           <div style={{ position: "sticky", top: 0, zIndex: 30, background: `linear-gradient(${C.bg}, ${C.bg}ee 80%, transparent)`, padding: "14px 16px 8px", display: "grid", gridTemplateColumns: "auto 1fr auto", alignItems: "center", gap: 10 }}>
+        <LogoMark size={48} />
+        <div style={{ display: "flex", justifyContent: "center" }}><DiscoWordmark size={24} /></div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, justifySelf: "end" }}>
+          <IconBtn onClick={() => setSearchOpen(true)} label="Търсене">🔎</IconBtn>
+          <IconBtn onClick={() => setNotifOpen(true)} label="Известия">🔔</IconBtn>
+          <IconBtn onClick={() => setInfoOpen(true)} label="За данните">ℹ️</IconBtn>
+          <IconBtn onClick={() => (profileName ? setTab("profile") : setLoginOpen(true))} label="Профил">
+            {profileName ? profileName[0].toUpperCase() : "👤"}
+          </IconBtn>
+        </div>
       </div>
+
 
       {tab === "home" && (
         <div>
