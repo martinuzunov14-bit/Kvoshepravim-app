@@ -11,7 +11,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install @supabase/supabase-js
+      - run: npm install @supabase/supabase-js ws
       - run: node update-phones.js
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
