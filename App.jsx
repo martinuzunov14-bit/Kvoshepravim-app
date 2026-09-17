@@ -286,14 +286,17 @@ function Sheet({ onClose, children }) {
 }
 function EventRow({ ev, venue, onOpen, wide }) {
   const dLeft = daysUntil(ev.date);
+  const isPoster = ev.isPoster;
+  const cardHeight = isPoster ? 340 : 190;
+  const cardWidth = wide ? "1 1 100%" : isPoster ? "0 0 220px" : "0 0 208px";
   return (
-    <div onClick={onOpen} style={{ cursor: "pointer", flex: wide ? "1 1 100%" : "0 0 208px", position: "relative", height: 190, borderRadius: 18, overflow: "hidden" }}>
+    <div onClick={onOpen} style={{ cursor: "pointer", flex: cardWidth, position: "relative", height: cardHeight, borderRadius: 18, overflow: "hidden", boxShadow: isPoster ? "0 6px 20px rgba(0,0,0,0.35)" : "none" }}>
       <img src={ev.img || venue.img} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(10,10,16,0) 35%, rgba(10,10,16,0.55) 70%, rgba(10,10,16,0.92) 100%)" }} />
+      <div style={{ position: "absolute", inset: 0, background: isPoster ? "linear-gradient(180deg, rgba(10,10,16,0) 55%, rgba(10,10,16,0.5) 78%, rgba(10,10,16,0.95) 100%)" : "linear-gradient(180deg, rgba(10,10,16,0) 35%, rgba(10,10,16,0.55) 70%, rgba(10,10,16,0.92) 100%)" }} />
       <div style={{ position: "absolute", top: 10, right: 10 }}><GenreBadge genre={ev.genre} /></div>
       {dLeft === 0 && <div style={{ position: "absolute", top: 10, left: 10, background: C.brand, color: "#fff", fontSize: 10.5, fontWeight: 700, padding: "3px 8px", borderRadius: 999 }}>🔥 ДНЕС</div>}
       <div style={{ position: "absolute", left: 12, right: 12, bottom: 10 }}>
-        <div style={{ fontWeight: 800, fontSize: 15, lineHeight: 1.25, color: "#fff", textShadow: "0 1px 6px rgba(0,0,0,.6)" }}>{ev.title}</div>
+        <div style={{ fontWeight: 800, fontSize: isPoster ? 16.5 : 15, lineHeight: 1.25, color: "#fff", textShadow: "0 1px 6px rgba(0,0,0,.6)" }}>{ev.title}</div>
         <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 12, margin: "3px 0 6px" }}>{venue?.name}</div>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "rgba(255,255,255,0.75)" }}>
           <span>📅 {weekday(ev.date)}, {fmt(ev.date)}</span>
@@ -440,6 +443,7 @@ export default function App() {
           time: e.event_time, genre: e.genre, subGenre: e.sub_genre, ticketUrl: e.ticket_url,
           ticketLabel: e.ticket_label, social: e.social, instagram: e.social, desc: e.description,
           img: e.image_url || placeholderImg(e.title, e.genre || "mixed", 640, 420),
+          isPoster: !!e.image_url,
         }));
         FESTIVALS = (fRows || []).map((f) => ({
           id: f.id, name: f.name, place: f.place, date: f.event_date, days: f.days, genre: f.genre,
@@ -730,9 +734,10 @@ export default function App() {
             )}
             {filteredEvents.map((ev) => {
               const v = venueById[ev.venueId];
+              const thumbSize = ev.isPoster ? 128 : 96;
               return (
                 <div key={ev.id} onClick={() => setOpenEvent(ev)} style={{ cursor: "pointer", display: "flex", gap: 12, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, overflow: "hidden" }}>
-                  <img src={v.img} alt="" style={{ width: 96, height: 96, objectFit: "cover", flex: "0 0 auto" }} />
+                  <img src={ev.img || v.img} alt="" style={{ width: thumbSize, height: thumbSize, objectFit: "cover", flex: "0 0 auto" }} />
                   <div style={{ padding: "10px 10px 10px 0", flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                       <div style={{ fontWeight: 700, fontSize: 13.5 }}>{ev.title}</div>
