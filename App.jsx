@@ -467,7 +467,7 @@ export default function App() {
       .then((gmaps) => {
         if (cancelled || !gmaps.places) return;
         const service = new gmaps.places.PlacesService(document.createElement("div"));
-        const withCoords = VENUES.filter((v) => v.lat != null && v.lon != null && v.type !== "club");
+        const withCoords = VENUES.filter((v) => v.lat != null && v.lon != null && !(v.type === "club" && v.isLogo));
         const priorityIds = new Set();
         for (const g of GENRE_LIST) {
           const v = withCoords.find((v) => v.type === "club" && v.genres[0] === g && !priorityIds.has(v.id));
