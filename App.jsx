@@ -62,7 +62,7 @@ function extractDomain(url) {
 function clubLogoUrl(website) {
   const domain = extractDomain(website);
   if (!domain) return null;
-  return `https://logo.clearbit.com/${domain}?size=300`;
+  return `https://logo.clearbit.com/${domain}?size=300&fallback=404`;
 }
 function placeholderImg(name, genreKey, w = 600, h = 360) {
   const color = (GENRES[genreKey] && GENRES[genreKey].color) || "#ff2f7e";
@@ -309,7 +309,7 @@ function EventRow({ ev, venue, onOpen, wide }) {
 function VenueCard({ v, onOpen, height = 130 }) {
   return (
     <div onClick={onOpen} style={{ cursor: "pointer", flex: "0 0 168px", position: "relative", height, borderRadius: 16, overflow: "hidden" }}>
-      <img src={v.img} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+      <img src={v.img} alt="" onError={(e) => { e.target.onerror = null; e.target.src = placeholderImg(v.name, v.genres[0], 600, 360); }} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(10,10,16,0) 40%, rgba(10,10,16,0.9) 100%)" }} />
       <div style={{ position: "absolute", left: 10, right: 10, bottom: 8 }}>
         <div style={{ fontWeight: 800, fontSize: 13, color: "#fff", textShadow: "0 1px 6px rgba(0,0,0,.6)" }}>{v.name}</div>
@@ -368,7 +368,7 @@ function NearbyScreen({ setOpenVenue }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {withDist.map(({ v, dist }) => (
           <div key={v.id} onClick={() => setOpenVenue(v)} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 10, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 8 }}>
-            <div style={{ width: 56, height: 56, borderRadius: 10, overflow: "hidden", flex: "0 0 auto" }}><img src={v.img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div>
+            <div style={{ width: 56, height: 56, borderRadius: 10, overflow: "hidden", flex: "0 0 auto" }}><img src={v.img} alt="" onError={(e) => { e.target.onerror = null; e.target.src = placeholderImg(v.name, v.genres[0], 600, 360); }} style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: 13.5 }}>{v.name}</div>
               <div style={{ fontSize: 11.5, color: C.inkDim }}>{TYPE_LABELS[v.type]} · {v.district}{dist != null ? ` · ${dist.toFixed(1)} km` : ""}</div>
@@ -671,7 +671,7 @@ export default function App() {
             <h2 style={{ fontFamily: "'Unbounded', sans-serif", fontSize: 15, margin: "0 0 10px" }}>Всички заведения ({filteredMapVenues.length})</h2>
             {filteredMapVenues.map((v) => (
               <div key={v.id} onClick={() => setOpenVenue(v)} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: `1px solid ${C.line}` }}>
-                <div style={{ width: 42, height: 42, borderRadius: 10, overflow: "hidden", flex: "0 0 auto" }}><img src={v.img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div>
+                <div style={{ width: 42, height: 42, borderRadius: 10, overflow: "hidden", flex: "0 0 auto" }}><img src={v.img} alt="" onError={(e) => { e.target.onerror = null; e.target.src = placeholderImg(v.name, v.genres[0], 600, 360); }} style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, fontSize: 13.5 }}>{v.name}</div>
                   <div style={{ fontSize: 11.5, color: C.inkDim }}>{TYPE_LABELS[v.type]} · {v.district}</div>
@@ -767,7 +767,7 @@ export default function App() {
             <div style={{ padding: "0 16px", display: "flex", flexDirection: "column", gap: 10 }}>
               {VENUES.filter((v) => v.id !== "tba").map((v) => (
                 <div key={v.id} onClick={() => setOpenVenue(v)} style={{ cursor: "pointer", display: "flex", gap: 12, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, overflow: "hidden" }}>
-                  <img src={v.img} alt="" style={{ width: 88, height: 88, objectFit: "cover", flex: "0 0 auto" }} />
+                  <img src={v.img} alt="" onError={(e) => { e.target.onerror = null; e.target.src = placeholderImg(v.name, v.genres[0], 600, 360); }} style={{ width: 88, height: 88, objectFit: "cover", flex: "0 0 auto" }} />
                   <div style={{ padding: "9px 10px 9px 0", flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 13.5 }}>{v.name}</div>
                     <div style={{ fontSize: 11.5, color: C.inkDim, margin: "3px 0 6px" }}>{TYPE_LABELS[v.type]} · {v.district}</div>
@@ -826,7 +826,7 @@ export default function App() {
           <div style={{ display: "flex", gap: 8, overflowX: "auto" }}>
             {[...favVenues].map((id) => venueById[id]).filter(Boolean).map((v) => (
               <div key={v.id} onClick={() => setOpenVenue(v)} style={{ cursor: "pointer", flex: "0 0 100px", textAlign: "center" }}>
-                <img src={v.img} alt="" style={{ width: 100, height: 70, objectFit: "cover", borderRadius: 10 }} />
+                <img src={v.img} alt="" onError={(e) => { e.target.onerror = null; e.target.src = placeholderImg(v.name, v.genres[0], 600, 360); }} style={{ width: 100, height: 70, objectFit: "cover", borderRadius: 10 }} />
                 <div style={{ fontSize: 11.5, fontWeight: 600, marginTop: 5 }}>{v.name}</div>
               </div>
             ))}
@@ -1058,7 +1058,7 @@ function EventDetail({ ev, venue, going, onGoing, onOpenVenue }) {
   const dLeft = daysUntil(ev.date);
   return (
     <div>
-      <img src={venue.img} alt="" style={{ width: "100%", height: 190, objectFit: "cover" }} />
+      <img src={venue.img} alt="" onError={(e) => { e.target.onerror = null; e.target.src = placeholderImg(venue.name, venue.genres[0], 600, 360); }} style={{ width: "100%", height: 190, objectFit: "cover" }} />
       <div style={{ padding: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <h2 style={{ fontFamily: "'Unbounded', sans-serif", fontSize: 18, margin: 0, maxWidth: 260 }}>{ev.title}</h2>
@@ -1126,7 +1126,7 @@ function ReportBug({ venueId, venueName }) {
 function VenueDetail({ venue, events, fav, onFav, onOpenEvent }) {
   return (
     <div>
-      <img src={venue.img} alt="" style={{ width: "100%", height: 190, objectFit: "cover" }} />
+      <img src={venue.img} alt="" onError={(e) => { e.target.onerror = null; e.target.src = placeholderImg(venue.name, venue.genres[0], 600, 360); }} style={{ width: "100%", height: 190, objectFit: "cover" }} />
       <div style={{ padding: 16 }}>
         {venue.statusWarning && (
           <div style={{ background: hex2rgba("#ff9a3d", 0.16), border: `1px solid ${hex2rgba("#ff9a3d", 0.5)}`, borderRadius: 10, padding: "8px 12px", fontSize: 12, fontWeight: 700, color: "#ff9a3d", marginBottom: 12 }}>
