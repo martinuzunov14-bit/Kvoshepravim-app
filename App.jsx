@@ -405,6 +405,7 @@ export default function App() {
   const [openFestival, setOpenFestival] = useState(null);
   const [finderOpen, setFinderOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
@@ -621,6 +622,7 @@ export default function App() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, padding: "16px 16px 0" }}>
             {[
               ["🔥", "Предстоящи", () => setTab("events")],
+              ["📅", "По дата", () => setCalendarOpen(true)],
               ["🗺️", "Карта", () => setTab("map")],
               ["📍", "Близо до мен", () => setTab("nearby")],
               ["🎉", "Фестивали", () => { setTab("more"); setMoreMode("festivals"); }],
@@ -908,6 +910,14 @@ export default function App() {
       {loginOpen && (
         <Sheet onClose={() => setLoginOpen(false)}>
           <LoginScreen onLogin={(name) => { setProfileName(name); setLoginOpen(false); }} />
+        </Sheet>
+      )}
+      {calendarOpen && (
+        <Sheet onClose={() => setCalendarOpen(false)}>
+          <CalendarSheet
+            upcoming={upcoming}
+            onPick={(date) => { setSelectedDate(date); setTab("events"); setCalendarOpen(false); }}
+          />
         </Sheet>
       )}
     </div>
@@ -1260,6 +1270,78 @@ function SearchScreen({ query, setQuery, results, onOpenEvent, onOpenVenue, onOp
           {results.events.length + results.venues.length + results.festivals.length === 0 && <div style={{ color: C.inkFaint, fontSize: 12.5 }}>Няма резултати за „{query}“.</div>}
         </div>
       )}
+    </div>
+  );
+}
+
+const MONTH_NAMES = ["януари","февруари","март","април","май","юни","юли","август","септември","октомври","ноември","декември"];
+function CalendarSheet({ upcoming, onPick }) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(today.getMonth()); // 0-indexed
+
+  const countsByDate = useMemo(() => {
+    const m = {};
+    for (const e of upcoming) m[e.date] = (m[e.date] || 0) + 1;
+    return m;
+  }, [upcoming]);
+
+  const firstOfMonth = new Date(viewYear, viewMonth, 1);
+  const startWeekday = (firstOfMonth.getDay() + 6) % 7; // Monday=0
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < startWeekday; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const changeMonth = (delta) => {
+    let m = viewMonth + delta, y = viewYear;
+    if (m < 0) { m = 11; y -= 1; }
+    if (m > 11) { m = 0; y += 1; }
+    setViewMonth(m); setViewYear(y);
+  };
+  const dateStr = (d) => `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+
+  return (
+    <div style={{ padding: 18 }}>
+      <h2 style={{ fontFamily: "'Unbounded', sans-serif", fontSize: 18, margin: "0 0 4px" }}>📅 Търси по дата</h2>
+      <p style={{ color: C.inkDim, fontSize: 12.5, margin: "0 0 16px" }}>Избери ден — числата под датите показват колко събития има.</p>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        <button onClick={() => changeMonth(-1)} style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 10, width: 36, height: 36, color: C.ink, fontSize: 16, cursor: "pointer" }}>‹</button>
+        <div style={{ fontWeight: 700, fontSize: 14.5 }}>{MONTH_NAMES[viewMonth]} {viewYear}</div>
+        <button onClick={() => changeMonth(1)} style={{ background: C.surface2, border: `1px solid ${C.line}`, borderRadius: 10, width: 36, height: 36, color: C.ink, fontSize: 16, cursor: "pointer" }}>›</button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginBottom: 6 }}>
+        {["пн","вт","ср","чт","пт","сб","нд"].map((d) => (
+          <div key={d} style={{ textAlign: "center", fontSize: 10.5, color: C.inkFaint, fontWeight: 700, padding: "4px 0" }}>{d}</div>
+        ))}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
+        {cells.map((d, i) => {
+          if (d == null) return <div key={i} />;
+          const ds = dateStr(d);
+          const count = countsByDate[ds] || 0;
+          const cellDate = new Date(viewYear, viewMonth, d);
+          const isPast = cellDate < today;
+          const isToday = cellDate.getTime() === today.getTime();
+          return (
+            <button
+              key={i}
+              onClick={() => !isPast && onPick(ds)}
+              disabled={isPast}
+              style={{
+                aspectRatio: "1", borderRadius: 10, border: isToday ? `1.5px solid ${C.brand}` : `1px solid ${C.line}`,
+                background: count > 0 ? hex2rgba(C.brand2, 0.18) : C.surface2,
+                color: isPast ? C.inkFaint : C.ink, cursor: isPast ? "default" : "pointer",
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1,
+                opacity: isPast ? 0.35 : 1, fontFamily: "inherit",
+              }}
+            >
+              <span style={{ fontSize: 12.5, fontWeight: isToday ? 800 : 600 }}>{d}</span>
+              {count > 0 && <span style={{ fontSize: 9, color: C.brand2, fontWeight: 700 }}>{count}</span>}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
