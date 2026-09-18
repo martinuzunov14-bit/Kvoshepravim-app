@@ -291,7 +291,7 @@ function EventRow({ ev, venue, onOpen, wide }) {
   const cardWidth = wide ? "1 1 100%" : isPoster ? "0 0 220px" : "0 0 208px";
   return (
     <div onClick={onOpen} style={{ cursor: "pointer", flex: cardWidth, position: "relative", height: cardHeight, borderRadius: 18, overflow: "hidden", boxShadow: isPoster ? "0 6px 20px rgba(0,0,0,0.35)" : "none" }}>
-      <img src={ev.img || venue.img} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+      <img src={ev.img || venue.img} alt="" onError={(e) => { e.target.onerror = null; e.target.src = placeholderImg(ev.title, ev.genre, 640, 420); }} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
       <div style={{ position: "absolute", inset: 0, background: isPoster ? "linear-gradient(180deg, rgba(10,10,16,0) 55%, rgba(10,10,16,0.5) 78%, rgba(10,10,16,0.95) 100%)" : "linear-gradient(180deg, rgba(10,10,16,0) 35%, rgba(10,10,16,0.55) 70%, rgba(10,10,16,0.92) 100%)" }} />
       <div style={{ position: "absolute", top: 10, right: 10 }}><GenreBadge genre={ev.genre} /></div>
       {dLeft === 0 && <div style={{ position: "absolute", top: 10, left: 10, background: C.brand, color: "#fff", fontSize: 10.5, fontWeight: 700, padding: "3px 8px", borderRadius: 999 }}>🔥 ДНЕС</div>}
@@ -737,7 +737,7 @@ export default function App() {
               const thumbSize = ev.isPoster ? 128 : 96;
               return (
                 <div key={ev.id} onClick={() => setOpenEvent(ev)} style={{ cursor: "pointer", display: "flex", gap: 12, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, overflow: "hidden" }}>
-                  <img src={ev.img || v.img} alt="" style={{ width: thumbSize, height: thumbSize, objectFit: "cover", flex: "0 0 auto" }} />
+                  <img src={ev.img || v.img} alt="" onError={(e) => { e.target.onerror = null; e.target.src = placeholderImg(ev.title, ev.genre, 640, 420); }} style={{ width: thumbSize, height: thumbSize, objectFit: "cover", flex: "0 0 auto" }} />
                   <div style={{ padding: "10px 10px 10px 0", flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                       <div style={{ fontWeight: 700, fontSize: 13.5 }}>{ev.title}</div>
@@ -1058,7 +1058,7 @@ function EventDetail({ ev, venue, going, onGoing, onOpenVenue }) {
   const dLeft = daysUntil(ev.date);
   return (
     <div>
-      <img src={venue.img} alt="" onError={(e) => { e.target.onerror = null; e.target.src = placeholderImg(venue.name, venue.genres[0], 600, 360); }} style={{ width: "100%", height: 190, objectFit: "cover" }} />
+      <img src={ev.img || venue.img} alt="" onError={(e) => { e.target.onerror = null; e.target.src = placeholderImg(ev.title, ev.genre, 600, 360); }} style={{ width: "100%", height: 190, objectFit: "cover" }} />
       <div style={{ padding: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <h2 style={{ fontFamily: "'Unbounded', sans-serif", fontSize: 18, margin: 0, maxWidth: 260 }}>{ev.title}</h2>
