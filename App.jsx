@@ -429,14 +429,14 @@ export default function App() {
         if (cancelled) return;
         VENUES = (vRows || []).map((v) => {
           const genre0 = (v.genres && v.genres[0]) || "mixed";
-          const logo = v.type === "club" ? clubLogoUrl(v.website) : null;
+          const logo = clubLogoUrl(v.website);
           return {
             id: v.id, name: v.name, district: v.district, type: v.type, genres: v.genres || ["mixed"],
             address: v.address, website: v.website, instagram: v.instagram, facebook: v.facebook, phone: v.phone,
             note: v.note, rating: v.rating, ratingSource: v.rating_source, lat: v.lat, lon: v.lon,
             statusWarning: v.status_warning, nowShowing: v.now_showing,
-            img: logo || placeholderImg(v.name, genre0, 600, 360),
-            isLogo: !!logo,
+            img: v.img || logo || placeholderImg(v.name, genre0, 600, 360),
+            isLogo: !!(v.img || logo),
           };
         });
         EVENTS = (eRows || []).map((e) => ({
